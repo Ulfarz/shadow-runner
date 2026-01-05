@@ -1,0 +1,8 @@
+{
+  "track_id": "core_setup_20260105",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-01-05T17:42:00Z",
+  "updated_at": "2026-01-05T17:42:00Z",
+  "description": "Initialize the core ShadowRunner environment: Set up the Vite/React project, integrate MapLibre GL for the dark map, and implement basic real-time GPS tracking with a HUD and the 'Relentless' Shadow logic."
+}
