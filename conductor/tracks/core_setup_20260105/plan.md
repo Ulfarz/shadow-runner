@@ -2,10 +2,10 @@
 
 ## Phase 1: Project Scaffolding & Map Integration
 
-- [~] Task: Initialize React + Vite project with TypeScript and Tailwind CSS
-- [ ] Task: Install core dependencies (`maplibre-gl`, `turf`, `zustand`, `lucide-react`)
-- [ ] Task: Implement `GameMap` component with a full-screen dark tactical style
-- [ ] Task: Implement Screen Wake Lock API to prevent device sleep
+- [x] Task: Initialize React + Vite project with TypeScript and Tailwind CSS
+- [x] Task: Install core dependencies (`maplibre-gl`, `@turf/turf`, `zustand`, `lucide-react`)
+- [x] Task: Implement `GameMap` component with a full-screen dark tactical style
+- [~] Task: Implement Screen Wake Lock API to prevent device sleep
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Project Scaffolding & Map Integration' (Protocol in workflow.md)
 
 ## Phase 2: GPS Tracking & HUD

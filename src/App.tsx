@@ -1,8 +1,13 @@
+import GameMap from './components/GameMap'
+import { useWakeLock } from './hooks/useWakeLock'
+
 function App() {
+  useWakeLock();
+  
   return (
-    <>
-      <h1>Shadow Runner</h1>
-    </>
+    <main className="w-full h-screen">
+      <GameMap />
+    </main>
   )
 }
 
