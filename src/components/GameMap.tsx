@@ -27,6 +27,7 @@ const GameMap: React.FC = () => {
             enableHighAccuracy: true
           },
           trackUserLocation: true,
+          // @ts-ignore
           showUserHeading: true
         }),
         'bottom-right'

@@ -1,14 +1,12 @@
 import { useEffect, useRef } from 'react';
 
 export const useWakeLock = () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const wakeLock = useRef<any>(null);
+  const wakeLock = useRef<WakeLockSentinel | null>(null);
 
   useEffect(() => {
     const requestWakeLock = async () => {
       try {
-        if ('wakeLock' in navigator) {
-          // @ts-ignore
+        if ('wakeLock' in navigator && navigator.wakeLock) {
           wakeLock.current = await navigator.wakeLock.request('screen');
           console.log('Wake Lock is active');
         }

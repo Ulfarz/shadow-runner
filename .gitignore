@@ -26,3 +26,6 @@ dist-ssr
 # Conductor
 .gemini/
 conductor/setup_state.json
+
+# Coverage
+coverage/

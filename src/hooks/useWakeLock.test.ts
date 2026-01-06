@@ -82,4 +82,14 @@ describe('useWakeLock', () => {
     
     consoleSpy.mockRestore();
   });
+
+  it('should not request wake lock if not supported', async () => {
+    // Remove wakeLock from navigator
+    // @ts-ignore
+    delete navigator.wakeLock;
+    
+    renderHook(() => useWakeLock());
+    
+    expect(mockRequest).not.toHaveBeenCalled();
+  });
 });
