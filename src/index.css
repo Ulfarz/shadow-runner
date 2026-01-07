@@ -1,10 +1,19 @@
 @import "tailwindcss";
 
-html, body, #root {
+html,
+body,
+#root {
   height: 100%;
+  /* Fallback */
+  height: 100dvh;
+  /* Dynamic viewport height for mobile */
   width: 100%;
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: #020617; /* matches slate-950 */
+  background-color: #020617;
+  touch-action: none;
+  /* Prevent browser zooming/panning */
+  overscroll-behavior: none;
+  /* Prevent pull-to-refresh */
 }

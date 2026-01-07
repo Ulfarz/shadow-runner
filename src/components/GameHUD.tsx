@@ -18,7 +18,7 @@ export const GameHUD: React.FC = () => {
     };
 
     return (
-        <div className="absolute inset-0 pointer-events-none p-4 pb-8 flex flex-col justify-end">
+        <div className="absolute inset-0 pointer-events-none p-4 pb-[calc(2rem+env(safe-area-inset-bottom))] flex flex-col justify-end">
             {/* Top Right Status (Satellite/Accuracy) */}
             <div className="absolute top-4 right-4 flex flex-col items-end gap-2">
                 <div className="flex items-center gap-2 bg-slate-900/80 text-emerald-400 px-3 py-1 rounded border border-emerald-500/30 backdrop-blur-sm">

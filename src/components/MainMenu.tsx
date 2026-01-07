@@ -11,7 +11,7 @@ export const MainMenu: React.FC = () => {
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-md">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-md overflow-y-auto">
             <div className="max-w-4xl w-full px-6 flex flex-col items-center">
                 {/* Logo / Header */}
                 <div className="mb-12 text-center">
