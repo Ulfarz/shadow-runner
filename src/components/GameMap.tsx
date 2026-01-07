@@ -16,30 +16,37 @@ const GameMap: React.FC = () => {
     if (map.current) return;
 
     if (mapContainer.current) {
-      map.current = new maplibregl.Map({
-        container: mapContainer.current,
-        style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
-        center: [2.3522, 48.8566], // Default Paris
-        zoom: 14,
-        attributionControl: false
-      });
+      try {
+        console.log("Initializing GameMap...");
+        map.current = new maplibregl.Map({
+          container: mapContainer.current,
+          style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+          center: [2.3522, 48.8566], // Default Paris
+          zoom: 14,
+          attributionControl: false
+        });
 
-      map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
+        map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
 
-      map.current.addControl(
-        new maplibregl.GeolocateControl({
-          positionOptions: { enableHighAccuracy: true },
-          trackUserLocation: true,
-          // @ts-ignore
-          showUserHeading: true
-        }),
-        'bottom-right'
-      );
+        map.current.addControl(
+          new maplibregl.GeolocateControl({
+            positionOptions: { enableHighAccuracy: true },
+            trackUserLocation: true,
+            // @ts-ignore
+            showUserHeading: true
+          }),
+          'bottom-right'
+        );
 
-      map.current.on('load', () => {
-        if (!map.current) return;
+        map.current.on('error', (e) => {
+          console.error("MapLibre Error:", e);
+        });
 
-        // --- Fog of War Layer (Bottom) ---
+        map.current.on('load', () => {
+          console.log("Map style loaded");
+          if (!map.current) return;
+
+          // --- Fog of War Layer (Bottom) ---
         map.current.addSource('fog', {
           type: 'geojson',
           data: { type: 'FeatureCollection', features: [] }
@@ -153,6 +160,9 @@ const GameMap: React.FC = () => {
           }
         });
       });
+      } catch (err) {
+        console.error("Failed to initialize map:", err);
+      }
     }
 
     return () => {
@@ -268,7 +278,7 @@ const GameMap: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-slate-950">
-      <div ref={mapContainer} className="absolute inset-0" />
+      <div ref={mapContainer} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
 
       {/* Title */}
       <div className="absolute top-4 left-4 z-10 pointer-events-none">
