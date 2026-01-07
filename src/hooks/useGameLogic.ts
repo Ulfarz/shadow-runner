@@ -15,6 +15,7 @@ export const useGameLogic = () => {
     const {
         userPosition,
         status,
+        gameMode,
         extractionPoint,
         shadowPosition,
         setStatus,
@@ -28,29 +29,30 @@ export const useGameLogic = () => {
 
     // Start Game Logic
     useEffect(() => {
-        if (status === 'IDLE' && userPosition && !extractionPoint) {
-            // 1. Generate Extraction Point
+        if (status === 'ACTIVE' && userPosition && !shadowPosition) {
             const userPoint = turf.point([userPosition.longitude, userPosition.latitude]);
 
-            // Random bearing (0-360)
-            const bearing = Math.random() * 360;
+            // 1. Generate Extraction Point (Only for EXTRACTION mode)
+            if (gameMode === 'EXTRACTION') {
+                const bearing = Math.random() * 360;
+                const destination = turf.destination(userPoint, EXTRACTION_DISTANCE_KM, bearing);
+                const [destLng, destLat] = destination.geometry.coordinates;
+                setExtractionPoint({ latitude: destLat, longitude: destLng });
 
-            // Calculate destination point
-            const destination = turf.destination(userPoint, EXTRACTION_DISTANCE_KM, bearing);
-            const [destLng, destLat] = destination.geometry.coordinates;
-
-            setExtractionPoint({ latitude: destLat, longitude: destLng });
-
-            // 2. Spawn Shadow (initially 500m behind user or random offset)
-            // For now, let's spawn it 500m "behind" relative to extraction (simplified: opposite bearing)
-            const shadowStart = turf.destination(userPoint, 0.5, (bearing + 180) % 360);
-            const [shadowLng, shadowLat] = shadowStart.geometry.coordinates;
-
-            setShadowPosition({ latitude: shadowLat, longitude: shadowLng });
-
-            setStatus('ACTIVE');
+                // Spawn Shadow behind user relative to extraction
+                const shadowStart = turf.destination(userPoint, 0.5, (bearing + 180) % 360);
+                const [shadowLng, shadowLat] = shadowStart.geometry.coordinates;
+                setShadowPosition({ latitude: shadowLat, longitude: shadowLng });
+            } else {
+                // SURVIVAL: No extraction point, spawn shadow at random distance/offset
+                const randomBearing = Math.random() * 360;
+                const shadowStart = turf.destination(userPoint, 0.8, randomBearing);
+                const [shadowLng, shadowLat] = shadowStart.geometry.coordinates;
+                setShadowPosition({ latitude: shadowLat, longitude: shadowLng });
+                setExtractionPoint(null); // Clear just in case
+            }
         }
-    }, [userPosition, status, extractionPoint, setStatus, setExtractionPoint, setShadowPosition, setShadowDistance]);
+    }, [userPosition, status, gameMode, shadowPosition, setStatus, setExtractionPoint, setShadowPosition]);
 
     // Game Loop (Shadow Movement & Win/Loss Check)
     useEffect(() => {
@@ -67,7 +69,6 @@ export const useGameLogic = () => {
             // 1. Move Shadow
             const shadowPoint = turf.point([shadowPosition.longitude, shadowPosition.latitude]);
             const userPoint = turf.point([userPosition.longitude, userPosition.latitude]);
-            const extractionGeo = turf.point([extractionPoint.longitude, extractionPoint.latitude]);
 
             // Calculate bearing from Shadow to User
             const bearingToUser = turf.bearing(shadowPoint, userPoint);
@@ -79,11 +80,14 @@ export const useGameLogic = () => {
 
             setShadowPosition({ latitude: newShadowLat, longitude: newShadowLng });
 
-            // 2. Check Win Condition (Distance to Extraction)
-            const distToExtraction = turf.distance(userPoint, extractionGeo, { units: 'meters' });
-            if (distToExtraction < EXTRACTION_RADIUS_M) {
-                setStatus('EXTRACTED');
-                return; // Loop ends
+            // 2. Check Win Condition (Only in EXTRACTION Mode)
+            if (gameMode === 'EXTRACTION' && extractionPoint) {
+                const extractionGeo = turf.point([extractionPoint.longitude, extractionPoint.latitude]);
+                const distToExtraction = turf.distance(userPoint, extractionGeo, { units: 'meters' });
+                if (distToExtraction < EXTRACTION_RADIUS_M) {
+                    setStatus('EXTRACTED');
+                    return;
+                }
             }
 
             // 3. Check Loss Condition (Distance to Shadow)

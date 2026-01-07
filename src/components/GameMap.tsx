@@ -9,7 +9,7 @@ const GameMap: React.FC = () => {
   const map = useRef<maplibregl.Map | null>(null);
 
   // Connect to store
-  const { extractionPoint, shadowPosition, status, exploredPolygon } = useGameStore();
+  const { userPosition, extractionPoint, shadowPosition, status, exploredPolygon } = useGameStore();
 
   // Initialize Map
   useEffect(() => {
@@ -120,6 +120,38 @@ const GameMap: React.FC = () => {
             'circle-stroke-color': '#7f1d1d'
           }
         });
+
+        // --- Player Source & Layer (Visual Position) ---
+        map.current.addSource('player', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] }
+        });
+
+        map.current.addLayer({
+          id: 'player-radius',
+          type: 'circle',
+          source: 'player',
+          paint: {
+            'circle-radius': 50, // Matches EXPLORATION_RADIUS_M approx in pixels/zoom
+            'circle-color': '#3b82f6', // Blue-500
+            'circle-opacity': 0.1,
+            'circle-stroke-width': 1,
+            'circle-stroke-color': '#60a5fa',
+            'circle-stroke-opacity': 0.5
+          }
+        });
+
+        map.current.addLayer({
+          id: 'player-marker',
+          type: 'circle',
+          source: 'player',
+          paint: {
+            'circle-radius': 6,
+            'circle-color': '#3b82f6',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#ffffff'
+          }
+        });
       });
     }
 
@@ -202,6 +234,27 @@ const GameMap: React.FC = () => {
       }
     }
   }, [shadowPosition]);
+
+  // Sync Player Position
+  useEffect(() => {
+    if (!map.current || !map.current.isStyleLoaded()) return;
+
+    const source = map.current.getSource('player') as maplibregl.GeoJSONSource;
+    if (source) {
+      if (userPosition) {
+        source.setData({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [userPosition.longitude, userPosition.latitude]
+          },
+          properties: {}
+        });
+      } else {
+        source.setData({ type: 'FeatureCollection', features: [] });
+      }
+    }
+  }, [userPosition]);
 
   // Calculate hazard opacity based on distance (start showing at 500m, max at 20m)
   const getHazardOpacity = (shadowDistance: number | null) => {

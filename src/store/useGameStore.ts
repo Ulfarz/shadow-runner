@@ -11,6 +11,7 @@ export interface UserPosition {
 }
 
 export type GameStatus = 'IDLE' | 'ACTIVE' | 'EXTRACTED' | 'CAUGHT';
+export type GameMode = 'EXTRACTION' | 'SURVIVAL';
 
 export interface GameState {
   userPosition: UserPosition | null;
@@ -18,6 +19,7 @@ export interface GameState {
 
   // Survival State
   status: GameStatus;
+  gameMode: GameMode | null;
   extractionPoint: { latitude: number; longitude: number } | null;
   shadowPosition: { latitude: number; longitude: number } | null;
   shadowDistance: number | null; // Distance in meters
@@ -27,6 +29,7 @@ export interface GameState {
   setExploredPolygon: (polygon: Feature<Polygon | MultiPolygon> | null) => void;
 
   setStatus: (status: GameStatus) => void;
+  setGameMode: (mode: GameMode | null) => void;
   setExtractionPoint: (point: { latitude: number; longitude: number } | null) => void;
   setShadowPosition: (point: { latitude: number; longitude: number } | null) => void;
   setShadowDistance: (distance: number | null) => void;
@@ -38,18 +41,21 @@ export const useGameStore = create<GameState>((set) => ({
   setUserPosition: (position) => set({ userPosition: position }),
 
   status: 'IDLE',
+  gameMode: null,
   extractionPoint: null,
   shadowPosition: null,
   shadowDistance: null,
   exploredPolygon: null,
 
   setStatus: (status) => set({ status }),
+  setGameMode: (gameMode) => set({ gameMode }),
   setExtractionPoint: (point) => set({ extractionPoint: point }),
   setShadowPosition: (point) => set({ shadowPosition: point }),
   setShadowDistance: (distance) => set({ shadowDistance: distance }),
   setExploredPolygon: (polygon) => set({ exploredPolygon: polygon }),
   resetGame: () => set({
     status: 'IDLE',
+    gameMode: null,
     extractionPoint: null,
     shadowPosition: null,
     shadowDistance: null,
