@@ -171,24 +171,15 @@ const GameMap: React.FC = () => {
     if (source) {
       if (exploredPolygon) {
         try {
-          // Create a mask: World minus Explored
-          // mask() defaults to the world bbox if no second arg provided
+          // Create a mask: World minus Explored (hides everything except explored areas)
           const fogPoly = turf.mask(exploredPolygon);
           source.setData(fogPoly);
         } catch (e) {
           console.error("Error generating fog mask:", e);
         }
       } else {
-        // No exploration yet? Cover the world.
-        // Create a polygon covering the whole world
-        const worldPoly = turf.polygon([[
-          [-180, -90],
-          [180, -90],
-          [180, 90],
-          [-180, 90],
-          [-180, -90]
-        ]]);
-        source.setData(worldPoly);
+        // No exploration yet: show map fully (no fog)
+        source.setData({ type: 'FeatureCollection', features: [] });
       }
     }
   }, [exploredPolygon]);
