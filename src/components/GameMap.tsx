@@ -23,11 +23,10 @@ const GameMap: React.FC = () => {
         console.log("Initializing GameMap with Mapbox...");
         map.current = new mapboxgl.Map({
           container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/dark-v11',
+          style: 'mapbox://styles/mapbox/streets-v12', // Use streets for testing visibility
           center: [2.3522, 48.8566], // Default Paris
           zoom: 14,
-          attributionControl: false,
-          projection: 'globe' // Enable 3D globe projection for better fog effect
+          attributionControl: true, // Re-enable for debugging
         });
 
         map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
@@ -50,15 +49,7 @@ const GameMap: React.FC = () => {
           console.log("Map style loaded");
           if (!map.current) return;
 
-          // --- Atmospheric Fog (Smoke/Brouillard) ---
-          map.current.setFog({
-            'range': [0.5, 10],
-            'color': '#2a2a2a', // Dark grey/smoke color
-            'horizon-blend': 0.2,
-            'high-color': '#111111', // Darker sky
-            'space-color': '#000000', // Black space
-            'star-intensity': 0.15
-          });
+          // --- Atmospheric Fog removed for visibility test ---
 
           // --- Fog of War Layer (Bottom) ---
         map.current.addSource('fog', {
@@ -66,20 +57,17 @@ const GameMap: React.FC = () => {
           data: { type: 'FeatureCollection', features: [] }
         });
 
+        /* Temporarily disabled for visibility test
         map.current.addLayer({
           id: 'fog-fill',
           type: 'fill',
           source: 'fog',
           paint: {
             'fill-color': '#000000',
-            'fill-opacity': 0.95 // Very dark fog
-          },
-          // Ensure fog is above base map but below markers? 
-          // Actually, strict Fog of War should hide *everything* except maybe UI overlays.
-          // But usually we want to hide the MAP, but maybe show the extraction point if it's "known"?
-          // For "Survival", you usually don't see the map.
-          // Let's put it fairly high.
+            'fill-opacity': 0.95
+          }
         });
+        */
 
 
         // --- Extraction Point Source & Layer ---
