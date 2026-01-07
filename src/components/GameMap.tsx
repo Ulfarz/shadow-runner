@@ -1,12 +1,15 @@
 import React, { useEffect, useRef } from 'react';
-import maplibregl from 'maplibre-gl';
-import 'maplibre-gl/dist/maplibre-gl.css';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { useGameStore } from '../store/useGameStore';
 import * as turf from '@turf/turf';
 
+// Set Mapbox Access Token
+mapboxgl.accessToken = 'pk.eyJ1IjoidG9tZ3VlZ3VlbiIsImEiOiJjbWp4OHJ5eHozazR3M2NzZWZic2x6ZnZvIn0.VvmJM17B1Bn5VxTIs-tGFw';
+
 const GameMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const map = useRef<maplibregl.Map | null>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
 
   // Connect to store
   const { userPosition, extractionPoint, shadowPosition, status, exploredPolygon } = useGameStore();
@@ -17,19 +20,20 @@ const GameMap: React.FC = () => {
 
     if (mapContainer.current) {
       try {
-        console.log("Initializing GameMap...");
-        map.current = new maplibregl.Map({
+        console.log("Initializing GameMap with Mapbox...");
+        map.current = new mapboxgl.Map({
           container: mapContainer.current,
-          style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+          style: 'mapbox://styles/mapbox/dark-v11',
           center: [2.3522, 48.8566], // Default Paris
           zoom: 14,
-          attributionControl: false
+          attributionControl: false,
+          projection: 'globe' // Enable 3D globe projection for better fog effect
         });
 
-        map.current.addControl(new maplibregl.NavigationControl(), 'top-right');
+        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
         map.current.addControl(
-          new maplibregl.GeolocateControl({
+          new mapboxgl.GeolocateControl({
             positionOptions: { enableHighAccuracy: true },
             trackUserLocation: true,
             // @ts-ignore
@@ -39,12 +43,22 @@ const GameMap: React.FC = () => {
         );
 
         map.current.on('error', (e) => {
-          console.error("MapLibre Error:", e);
+          console.error("Mapbox Error:", e);
         });
 
         map.current.on('load', () => {
           console.log("Map style loaded");
           if (!map.current) return;
+
+          // --- Atmospheric Fog (Smoke/Brouillard) ---
+          map.current.setFog({
+            'range': [0.5, 10],
+            'color': '#2a2a2a', // Dark grey/smoke color
+            'horizon-blend': 0.2,
+            'high-color': '#111111', // Darker sky
+            'space-color': '#000000', // Black space
+            'star-intensity': 0.15
+          });
 
           // --- Fog of War Layer (Bottom) ---
         map.current.addSource('fog', {
@@ -177,7 +191,7 @@ const GameMap: React.FC = () => {
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded()) return;
 
-    const source = map.current.getSource('fog') as maplibregl.GeoJSONSource;
+    const source = map.current.getSource('fog') as mapboxgl.GeoJSONSource;
     if (source) {
       if (exploredPolygon) {
         try {
@@ -198,7 +212,7 @@ const GameMap: React.FC = () => {
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded()) return;
 
-    const source = map.current.getSource('extraction') as maplibregl.GeoJSONSource;
+    const source = map.current.getSource('extraction') as mapboxgl.GeoJSONSource;
     if (source) {
       if (extractionPoint) {
         source.setData({
@@ -219,7 +233,7 @@ const GameMap: React.FC = () => {
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded()) return;
 
-    const source = map.current.getSource('shadow') as maplibregl.GeoJSONSource;
+    const source = map.current.getSource('shadow') as mapboxgl.GeoJSONSource;
     if (source) {
       if (shadowPosition) {
         source.setData({
@@ -240,7 +254,7 @@ const GameMap: React.FC = () => {
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded()) return;
 
-    const source = map.current.getSource('player') as maplibregl.GeoJSONSource;
+    const source = map.current.getSource('player') as mapboxgl.GeoJSONSource;
     if (source) {
       if (userPosition) {
         source.setData({

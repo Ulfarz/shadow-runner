@@ -3,10 +3,11 @@ import GameMap from './GameMap';
 import { useGameStore } from '../store/useGameStore';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
-// Mock MapLibre GL
-vi.mock('maplibre-gl', () => {
+// Mock Mapbox GL
+vi.mock('mapbox-gl', () => {
   return {
     default: {
+      accessToken: '',
       Map: vi.fn().mockImplementation(function() {
         return {
           addControl: vi.fn(),
@@ -14,6 +15,7 @@ vi.mock('maplibre-gl', () => {
           remove: vi.fn(),
           getSource: vi.fn(),
           isStyleLoaded: vi.fn().mockReturnValue(true),
+          setFog: vi.fn(),
         };
       }),
       NavigationControl: vi.fn(),

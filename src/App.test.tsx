@@ -3,9 +3,10 @@ import App from './App';
 import { vi, describe, it, expect } from 'vitest';
 
 // Mock dependencies
-vi.mock('maplibre-gl', () => {
+vi.mock('mapbox-gl', () => {
   return {
     default: {
+      accessToken: '',
       Map: vi.fn().mockImplementation(function() {
         return {
           addControl: vi.fn(),
@@ -13,6 +14,7 @@ vi.mock('maplibre-gl', () => {
           remove: vi.fn(),
           getSource: vi.fn(),
           isStyleLoaded: vi.fn().mockReturnValue(true),
+          setFog: vi.fn(),
         };
       }),
       NavigationControl: vi.fn(),
