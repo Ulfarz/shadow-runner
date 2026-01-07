@@ -13,9 +13,9 @@
 - [x] Task: Create `useGameStore` with Zustand for position and game state
 - [x] Task: Design and implement HUD-style overlays for stats and alerts
 
-## Phase 3: Survival Logic (Extraction & Shadow)
+## Phase 3: Survival Logic (Extraction & Shadow) [checkpoint: 0fa459e]
 
 - [x] Task: Implement random "Extraction Point" generation (2km radius) using Turf.js
 - [x] Task: Implement "Relentless" Shadow movement algorithm
 - [x] Task: Create proximity-based visual pulsing effect (Hazard Red)
-- [~] Task: Conductor - User Manual Verification 'Phase 3: Survival Logic (Extraction & Shadow)' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Survival Logic (Extraction & Shadow)' (Protocol in workflow.md)
