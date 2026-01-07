@@ -2,13 +2,14 @@ import React, { useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useGameStore } from '../store/useGameStore';
+import * as turf from '@turf/turf';
 
 const GameMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
 
   // Connect to store
-  const { extractionPoint, shadowPosition, status } = useGameStore();
+  const { extractionPoint, shadowPosition, status, exploredPolygon } = useGameStore();
 
   // Initialize Map
   useEffect(() => {
@@ -37,6 +38,28 @@ const GameMap: React.FC = () => {
 
       map.current.on('load', () => {
         if (!map.current) return;
+
+        // --- Fog of War Layer (Bottom) ---
+        map.current.addSource('fog', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] }
+        });
+
+        map.current.addLayer({
+          id: 'fog-fill',
+          type: 'fill',
+          source: 'fog',
+          paint: {
+            'fill-color': '#000000',
+            'fill-opacity': 0.95 // Very dark fog
+          },
+          // Ensure fog is above base map but below markers? 
+          // Actually, strict Fog of War should hide *everything* except maybe UI overlays.
+          // But usually we want to hide the MAP, but maybe show the extraction point if it's "known"?
+          // For "Survival", you usually don't see the map.
+          // Let's put it fairly high.
+        });
+
 
         // --- Extraction Point Source & Layer ---
         map.current.addSource('extraction', {
@@ -107,6 +130,36 @@ const GameMap: React.FC = () => {
       }
     };
   }, []);
+
+  // Sync Fog of War
+  useEffect(() => {
+    if (!map.current || !map.current.isStyleLoaded()) return;
+
+    const source = map.current.getSource('fog') as maplibregl.GeoJSONSource;
+    if (source) {
+      if (exploredPolygon) {
+        try {
+          // Create a mask: World minus Explored
+          // mask() defaults to the world bbox if no second arg provided
+          const fogPoly = turf.mask(exploredPolygon);
+          source.setData(fogPoly);
+        } catch (e) {
+          console.error("Error generating fog mask:", e);
+        }
+      } else {
+        // No exploration yet? Cover the world.
+        // Create a polygon covering the whole world
+        const worldPoly = turf.polygon([[
+          [-180, -90],
+          [180, -90],
+          [180, 90],
+          [-180, 90],
+          [-180, -90]
+        ]]);
+        source.setData(worldPoly);
+      }
+    }
+  }, [exploredPolygon]);
 
   // Sync Extraction Point
   useEffect(() => {
