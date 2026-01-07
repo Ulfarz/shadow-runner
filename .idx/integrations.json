@@ -1,3 +1,6 @@
 {
-  "firebase_hosting": {}
+  "firebase_hosting": {
+    "deploymentHostingUrl": "https://shadow-runner-42425441-c4622.web.app"
+  },
+  "cloud_run_deploy": {}
 }
