@@ -52,138 +52,159 @@ const GameMap: React.FC = () => {
 
           // --- Atmospheric Fog removed for visibility test ---
 
+          // --- Load Fog Texture ---
+          if (!map.current.hasImage('fog-texture')) {
+            map.current.loadImage('/fog-texture.png', (error, image) => {
+              if (error) {
+                console.error("Failed to load fog texture:", error);
+                return;
+              }
+              if (!map.current) return;
+              if (image && !map.current.hasImage('fog-texture')) {
+                map.current.addImage('fog-texture', image);
+
+                // Update fog layer to use texture after loading
+                if (map.current.getLayer('fog-fill')) {
+                  map.current.setPaintProperty('fog-fill', 'fill-pattern', 'fog-texture');
+                  map.current.setPaintProperty('fog-fill', 'fill-opacity', 1); // Full opacity for the pattern
+                  map.current.setPaintProperty('fog-fill', 'fill-color', "rgba(0,0,0,0)"); // Remove solid color
+                }
+              }
+            });
+          }
+
           // --- Fog of War Layer (Bottom) ---
-        map.current.addSource('fog', {
-          type: 'geojson',
-          data: { type: 'FeatureCollection', features: [] }
-        });
+          map.current.addSource('fog', {
+            type: 'geojson',
+            data: turf.polygon([[[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]]]) // Start fully obscured
+          });
 
-        /* Temporarily disabled for visibility test
-        map.current.addLayer({
-          id: 'fog-fill',
-          type: 'fill',
-          source: 'fog',
-          paint: {
-            'fill-color': '#000000',
-            'fill-opacity': 0.95
-          }
-        });
-        */
 
-        // --- Route Source & Layer ---
-        map.current.addSource('route', {
-          type: 'geojson',
-          data: { type: 'FeatureCollection', features: [] }
-        });
+          map.current.addLayer({
+            id: 'fog-fill',
+            type: 'fill',
+            source: 'fog',
+            paint: {
+              'fill-color': '#202020', // Fallback color while texture loads
+              'fill-opacity': 0.95
+            }
+          });
 
-        map.current.addLayer({
-          id: 'route-line',
-          type: 'line',
-          source: 'route',
-          layout: {
-            'line-join': 'round',
-            'line-cap': 'round'
-          },
-          paint: {
-            'line-color': '#fbbf24', // Amber-400
-            'line-width': 4,
-            'line-opacity': 0.8,
-            'line-dasharray': [2, 2] // Dashed
-          }
-        });
 
-        // --- Extraction Point Source & Layer ---
-        map.current.addSource('extraction', {
-          type: 'geojson',
-          data: { type: 'FeatureCollection', features: [] }
-        });
+          // --- Route Source & Layer ---
+          map.current.addSource('route', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+          });
 
-        map.current.addLayer({
-          id: 'extraction-glow',
-          type: 'circle',
-          source: 'extraction',
-          paint: {
-            'circle-radius': 40,
-            'circle-color': '#10b981', // Emerald-500
-            'circle-opacity': 0.3,
-            'circle-blur': 0.5
-          }
-        });
+          map.current.addLayer({
+            id: 'route-line',
+            type: 'line',
+            source: 'route',
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round'
+            },
+            paint: {
+              'line-color': '#fbbf24', // Amber-400
+              'line-width': 4,
+              'line-opacity': 0.8,
+              'line-dasharray': [2, 2] // Dashed
+            }
+          });
 
-        map.current.addLayer({
-          id: 'extraction-core',
-          type: 'circle',
-          source: 'extraction',
-          paint: {
-            'circle-radius': 10,
-            'circle-color': '#34d399', // Emerald-400
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#ffffff'
-          }
-        });
+          // --- Extraction Point Source & Layer ---
+          map.current.addSource('extraction', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+          });
 
-        // --- Shadow Source & Layer ---
-        map.current.addSource('shadow', {
-          type: 'geojson',
-          data: { type: 'FeatureCollection', features: [] }
-        });
+          map.current.addLayer({
+            id: 'extraction-glow',
+            type: 'circle',
+            source: 'extraction',
+            paint: {
+              'circle-radius': 40,
+              'circle-color': '#10b981', // Emerald-500
+              'circle-opacity': 0.3,
+              'circle-blur': 0.5
+            }
+          });
 
-        map.current.addLayer({
-          id: 'shadow-glow',
-          type: 'circle',
-          source: 'shadow',
-          paint: {
-            'circle-radius': 50,
-            'circle-color': '#ef4444', // Red-500
-            'circle-opacity': 0.2,
-            'circle-blur': 0.4
-          }
-        });
+          map.current.addLayer({
+            id: 'extraction-core',
+            type: 'circle',
+            source: 'extraction',
+            paint: {
+              'circle-radius': 10,
+              'circle-color': '#34d399', // Emerald-400
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff'
+            }
+          });
 
-        map.current.addLayer({
-          id: 'shadow-core',
-          type: 'circle',
-          source: 'shadow',
-          paint: {
-            'circle-radius': 8,
-            'circle-color': '#dc2626', // Red-600
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#7f1d1d'
-          }
-        });
+          // --- Shadow Source & Layer ---
+          map.current.addSource('shadow', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+          });
 
-        // --- Player Source & Layer (Visual Position) ---
-        map.current.addSource('player', {
-          type: 'geojson',
-          data: { type: 'FeatureCollection', features: [] }
-        });
+          map.current.addLayer({
+            id: 'shadow-glow',
+            type: 'circle',
+            source: 'shadow',
+            paint: {
+              'circle-radius': 50,
+              'circle-color': '#ef4444', // Red-500
+              'circle-opacity': 0.2,
+              'circle-blur': 0.4
+            }
+          });
 
-        map.current.addLayer({
-          id: 'player-radius',
-          type: 'circle',
-          source: 'player',
-          paint: {
-            'circle-radius': 50, // Matches EXPLORATION_RADIUS_M approx in pixels/zoom
-            'circle-color': '#3b82f6', // Blue-500
-            'circle-opacity': 0.1,
-            'circle-stroke-width': 1,
-            'circle-stroke-color': '#60a5fa',
-            'circle-stroke-opacity': 0.5
-          }
-        });
+          map.current.addLayer({
+            id: 'shadow-core',
+            type: 'circle',
+            source: 'shadow',
+            paint: {
+              'circle-radius': 8,
+              'circle-color': '#dc2626', // Red-600
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#7f1d1d'
+            }
+          });
 
-        map.current.addLayer({
-          id: 'player-marker',
-          type: 'circle',
-          source: 'player',
-          paint: {
-            'circle-radius': 6,
-            'circle-color': '#3b82f6',
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#ffffff'
-          }
+          // --- Player Source & Layer (Visual Position) ---
+          map.current.addSource('player', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+          });
+
+          map.current.addLayer({
+            id: 'player-radius',
+            type: 'circle',
+            source: 'player',
+            paint: {
+              'circle-radius': 50, // Matches EXPLORATION_RADIUS_M approx in pixels/zoom
+              'circle-color': '#3b82f6', // Blue-500
+              'circle-opacity': 0.1,
+              'circle-stroke-width': 1,
+              'circle-stroke-color': '#60a5fa',
+              'circle-stroke-opacity': 0.5
+            }
+          });
+
+          map.current.addLayer({
+            id: 'player-marker',
+            type: 'circle',
+            source: 'player',
+            paint: {
+              'circle-radius': 6,
+              'circle-color': '#3b82f6',
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff'
+            }
+          });
         });
-      });
       } catch (err) {
         console.error("Failed to initialize map:", err);
       }
@@ -212,8 +233,9 @@ const GameMap: React.FC = () => {
           console.error("Error generating fog mask:", e);
         }
       } else {
-        // No exploration yet: show map fully (no fog)
-        source.setData({ type: 'FeatureCollection', features: [] });
+        // No exploration yet: show full fog (blackout)
+        const worldMask = turf.polygon([[[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]]]);
+        source.setData(worldMask);
       }
     }
   }, [exploredPolygon]);
