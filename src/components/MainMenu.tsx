@@ -7,37 +7,37 @@ export const MainMenu: React.FC = () => {
     const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
 
     const handleSelectMode = (mode: GameMode) => {
-        if (mode === 'EXTRACTION') {
-            setSelectedMode('EXTRACTION');
-        } else {
-            // Survival starts immediately for now
-            setGameMode(mode);
+        setSelectedMode(mode);
+    };
+
+    const handleStartGame = () => {
+        if (selectedMode) {
+            setGameMode(selectedMode);
             setStatus('ACTIVE');
         }
     };
 
-    const handleStartExtraction = () => {
-        setGameMode('EXTRACTION');
-        setStatus('ACTIVE');
-    };
-
-    if (selectedMode === 'EXTRACTION') {
+    if (selectedMode) {
         return (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-md overflow-y-auto">
                 <div className="max-w-md w-full px-6 flex flex-col items-center">
                     <div className="mb-8 text-center">
-                        <Target size={64} className="text-emerald-500 mx-auto mb-4" />
-                        <h2 className="text-3xl font-black text-white uppercase tracking-tighter">
-                            Mission Config
+                        {selectedMode === 'EXTRACTION' ? (
+                            <Target size={64} className="text-emerald-500 mx-auto mb-4" />
+                        ) : (
+                            <ShieldAlert size={64} className="text-red-500 mx-auto mb-4" />
+                        )}
+                        <h2 className={`text-3xl font-black uppercase tracking-tighter ${selectedMode === 'EXTRACTION' ? 'text-white' : 'text-red-500'}`}>
+                            {selectedMode === 'EXTRACTION' ? 'Mission Config' : 'Survival Config'}
                         </h2>
                         <p className="text-slate-400 font-mono text-sm">
-                            SET_EXTRACTION_PARAMETERS
+                            {selectedMode === 'EXTRACTION' ? 'SET_EXTRACTION_PARAMETERS' : 'SET_SURVIVAL_PARAMETERS'}
                         </p>
                     </div>
 
                     <div className="w-full bg-slate-900 border border-slate-700 rounded-xl p-6 mb-6">
-                        <label className="block text-emerald-400 font-bold font-mono text-xs uppercase mb-2">
-                            Target Distance (km)
+                        <label className={`block font-bold font-mono text-xs uppercase mb-2 ${selectedMode === 'EXTRACTION' ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {selectedMode === 'EXTRACTION' ? 'Target Distance' : 'Reference Distance'} (km)
                         </label>
                         <div className="flex items-center gap-4">
                             <input
@@ -47,7 +47,7 @@ export const MainMenu: React.FC = () => {
                                 step="0.1"
                                 value={targetDistance}
                                 onChange={(e) => setTargetDistance(parseFloat(e.target.value) || 2.0)}
-                                className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white font-mono text-xl focus:border-emerald-500 focus:outline-none transition-colors"
+                                className={`flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white font-mono text-xl focus:outline-none transition-colors ${selectedMode === 'EXTRACTION' ? 'focus:border-emerald-500' : 'focus:border-red-500'}`}
                             />
                             <span className="text-slate-500 font-mono font-bold">KM</span>
                         </div>
@@ -65,11 +65,14 @@ export const MainMenu: React.FC = () => {
                             BACK
                         </button>
                         <button
-                            onClick={handleStartExtraction}
-                            className="flex-[2] py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 uppercase tracking-wide shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)]"
+                            onClick={handleStartGame}
+                            className={`flex-[2] py-4 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 uppercase tracking-wide ${selectedMode === 'EXTRACTION'
+                                ? 'bg-emerald-600 hover:bg-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)]'
+                                : 'bg-red-600 hover:bg-red-500 shadow-[0_0_20px_rgba(220,38,38,0.3)] hover:shadow-[0_0_30px_rgba(220,38,38,0.5)]'
+                                }`}
                         >
                             <Play size={20} fill="currentColor" />
-                            Start Mission
+                            {selectedMode === 'EXTRACTION' ? 'Start Mission' : 'Start Survival'}
                         </button>
                     </div>
                 </div>

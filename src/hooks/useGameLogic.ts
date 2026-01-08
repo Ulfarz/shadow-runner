@@ -74,13 +74,22 @@ export const useGameLogic = () => {
                     setShadowPosition({ latitude: shadowLat, longitude: shadowLng });
 
                 } else {
-                    // SURVIVAL: No extraction point, spawn shadow at random distance/offset
+                    // SURVIVAL: Spawn a visual target point at the chosen distance
                     const randomBearing = Math.random() * 360;
-                    const shadowStart = turf.destination(userPoint, 0.8, randomBearing);
+                    const roughDest = turf.destination(userPoint, targetDistance, randomBearing);
+                    const [roughLng, roughLat] = roughDest.geometry.coordinates;
+
+                    // Set visual target (reusing extractionPoint for rendering)
+                    setExtractionPoint({ latitude: roughLat, longitude: roughLng });
+
+                    // Simple straight line for visual reference
+                    setRouteCoordinates([[userPosition.longitude, userPosition.latitude], [roughLng, roughLat]]);
+
+                    // Spawn Shadow at random offset
+                    const shadowBearing = Math.random() * 360;
+                    const shadowStart = turf.destination(userPoint, 0.5, shadowBearing); // Start closer in survival? kept at 0.5km or adjust
                     const [shadowLng, shadowLat] = shadowStart.geometry.coordinates;
                     setShadowPosition({ latitude: shadowLat, longitude: shadowLng });
-                    setExtractionPoint(null); // Clear just in case
-                    setRouteCoordinates(null);
                 }
             };
 
