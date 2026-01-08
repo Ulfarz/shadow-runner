@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '../store/useGameStore';
 import * as turf from '@turf/turf';
+import { MAPBOX_TOKEN } from '../utils/config';
 
 // Constants
-const EXTRACTION_DISTANCE_KM = 2.0; // Target distance
 const EXTRACTION_RADIUS_M = 50; // Win radius
 const SHADOW_CATCH_RADIUS_M = 20; // Loss radius
 const SHADOW_SPEED_KPH = 15; // Shadow speed in km/h
@@ -18,10 +18,12 @@ export const useGameLogic = () => {
         gameMode,
         extractionPoint,
         shadowPosition,
+        targetDistance,
         setStatus,
         setExtractionPoint,
         setShadowPosition,
-        setShadowDistance
+        setShadowDistance,
+        setRouteCoordinates
     } = useGameStore();
 
     const lastUpdateRef = useRef<number>(Date.now());
@@ -30,29 +32,61 @@ export const useGameLogic = () => {
     // Start Game Logic
     useEffect(() => {
         if (status === 'ACTIVE' && userPosition && !shadowPosition) {
-            const userPoint = turf.point([userPosition.longitude, userPosition.latitude]);
+            const initGame = async () => {
+                const userPoint = turf.point([userPosition.longitude, userPosition.latitude]);
 
-            // 1. Generate Extraction Point (Only for EXTRACTION mode)
-            if (gameMode === 'EXTRACTION') {
-                const bearing = Math.random() * 360;
-                const destination = turf.destination(userPoint, EXTRACTION_DISTANCE_KM, bearing);
-                const [destLng, destLat] = destination.geometry.coordinates;
-                setExtractionPoint({ latitude: destLat, longitude: destLng });
+                // 1. Generate Extraction Point (Only for EXTRACTION mode)
+                if (gameMode === 'EXTRACTION') {
+                    const bearing = Math.random() * 360;
+                    // Calculate rough destination based on target distance
+                    const roughDest = turf.destination(userPoint, targetDistance, bearing);
+                    const [roughLng, roughLat] = roughDest.geometry.coordinates;
 
-                // Spawn Shadow behind user relative to extraction
-                const shadowStart = turf.destination(userPoint, 0.5, (bearing + 180) % 360);
-                const [shadowLng, shadowLat] = shadowStart.geometry.coordinates;
-                setShadowPosition({ latitude: shadowLat, longitude: shadowLng });
-            } else {
-                // SURVIVAL: No extraction point, spawn shadow at random distance/offset
-                const randomBearing = Math.random() * 360;
-                const shadowStart = turf.destination(userPoint, 0.8, randomBearing);
-                const [shadowLng, shadowLat] = shadowStart.geometry.coordinates;
-                setShadowPosition({ latitude: shadowLat, longitude: shadowLng });
-                setExtractionPoint(null); // Clear just in case
-            }
+                    try {
+                        // Fetch real walking route
+                        const response = await fetch(
+                            `https://api.mapbox.com/directions/v5/mapbox/walking/${userPosition.longitude},${userPosition.latitude};${roughLng},${roughLat}?geometries=geojson&access_token=${MAPBOX_TOKEN}`
+                        );
+                        const data = await response.json();
+
+                        if (data.routes && data.routes.length > 0) {
+                            const route = data.routes[0];
+                            const coords = route.geometry.coordinates;
+                            setRouteCoordinates(coords);
+
+                            // Set actual extraction point to the end of the route
+                            const endPoint = coords[coords.length - 1];
+                            setExtractionPoint({ latitude: endPoint[1], longitude: endPoint[0] });
+                        } else {
+                            console.warn("No route found, falling back to straight line");
+                            setExtractionPoint({ latitude: roughLat, longitude: roughLng });
+                            setRouteCoordinates([[userPosition.longitude, userPosition.latitude], [roughLng, roughLat]]);
+                        }
+                    } catch (error) {
+                        console.error("Routing error:", error);
+                        setExtractionPoint({ latitude: roughLat, longitude: roughLng });
+                        setRouteCoordinates([[userPosition.longitude, userPosition.latitude], [roughLng, roughLat]]);
+                    }
+
+                    // Spawn Shadow behind user relative to the rough bearing
+                    const shadowStart = turf.destination(userPoint, 0.5, (bearing + 180) % 360);
+                    const [shadowLng, shadowLat] = shadowStart.geometry.coordinates;
+                    setShadowPosition({ latitude: shadowLat, longitude: shadowLng });
+
+                } else {
+                    // SURVIVAL: No extraction point, spawn shadow at random distance/offset
+                    const randomBearing = Math.random() * 360;
+                    const shadowStart = turf.destination(userPoint, 0.8, randomBearing);
+                    const [shadowLng, shadowLat] = shadowStart.geometry.coordinates;
+                    setShadowPosition({ latitude: shadowLat, longitude: shadowLng });
+                    setExtractionPoint(null); // Clear just in case
+                    setRouteCoordinates(null);
+                }
+            };
+
+            initGame();
         }
-    }, [userPosition, status, gameMode, shadowPosition, setStatus, setExtractionPoint, setShadowPosition]);
+    }, [userPosition, status, gameMode, shadowPosition, targetDistance, setStatus, setExtractionPoint, setShadowPosition, setRouteCoordinates]);
 
     // Game Loop (Shadow Movement & Win/Loss Check)
     useEffect(() => {

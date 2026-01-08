@@ -23,6 +23,8 @@ export interface GameState {
   extractionPoint: { latitude: number; longitude: number } | null;
   shadowPosition: { latitude: number; longitude: number } | null;
   shadowDistance: number | null; // Distance in meters
+  targetDistance: number; // Target distance in km
+  routeCoordinates: number[][] | null; // Array of [lng, lat]
 
   // Fog of War State
   exploredPolygon: Feature<Polygon | MultiPolygon> | null;
@@ -33,6 +35,8 @@ export interface GameState {
   setExtractionPoint: (point: { latitude: number; longitude: number } | null) => void;
   setShadowPosition: (point: { latitude: number; longitude: number } | null) => void;
   setShadowDistance: (distance: number | null) => void;
+  setTargetDistance: (distance: number) => void;
+  setRouteCoordinates: (coords: number[][] | null) => void;
   resetGame: () => void;
 }
 
@@ -45,6 +49,8 @@ export const useGameStore = create<GameState>((set) => ({
   extractionPoint: null,
   shadowPosition: null,
   shadowDistance: null,
+  targetDistance: 2.0, // Default 2km
+  routeCoordinates: null,
   exploredPolygon: null,
 
   setStatus: (status) => set({ status }),
@@ -52,6 +58,8 @@ export const useGameStore = create<GameState>((set) => ({
   setExtractionPoint: (point) => set({ extractionPoint: point }),
   setShadowPosition: (point) => set({ shadowPosition: point }),
   setShadowDistance: (distance) => set({ shadowDistance: distance }),
+  setTargetDistance: (distance) => set({ targetDistance: distance }),
+  setRouteCoordinates: (coords) => set({ routeCoordinates: coords }),
   setExploredPolygon: (polygon) => set({ exploredPolygon: polygon }),
   resetGame: () => set({
     status: 'IDLE',
@@ -59,6 +67,8 @@ export const useGameStore = create<GameState>((set) => ({
     extractionPoint: null,
     shadowPosition: null,
     shadowDistance: null,
+    targetDistance: 2.0,
+    routeCoordinates: null,
     exploredPolygon: null
   }),
 }));

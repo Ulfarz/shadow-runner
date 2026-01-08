@@ -1,14 +1,81 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useGameStore, GameMode } from '../store/useGameStore';
-import { Target, ShieldAlert, Play, Map as MapIcon } from 'lucide-react';
+import { Target, ShieldAlert, Play, Map as MapIcon, ChevronLeft } from 'lucide-react';
 
 export const MainMenu: React.FC = () => {
-    const { setGameMode, setStatus } = useGameStore();
+    const { setGameMode, setStatus, targetDistance, setTargetDistance } = useGameStore();
+    const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
 
     const handleSelectMode = (mode: GameMode) => {
-        setGameMode(mode);
+        if (mode === 'EXTRACTION') {
+            setSelectedMode('EXTRACTION');
+        } else {
+            // Survival starts immediately for now
+            setGameMode(mode);
+            setStatus('ACTIVE');
+        }
+    };
+
+    const handleStartExtraction = () => {
+        setGameMode('EXTRACTION');
         setStatus('ACTIVE');
     };
+
+    if (selectedMode === 'EXTRACTION') {
+        return (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-md overflow-y-auto">
+                <div className="max-w-md w-full px-6 flex flex-col items-center">
+                    <div className="mb-8 text-center">
+                        <Target size={64} className="text-emerald-500 mx-auto mb-4" />
+                        <h2 className="text-3xl font-black text-white uppercase tracking-tighter">
+                            Mission Config
+                        </h2>
+                        <p className="text-slate-400 font-mono text-sm">
+                            SET_EXTRACTION_PARAMETERS
+                        </p>
+                    </div>
+
+                    <div className="w-full bg-slate-900 border border-slate-700 rounded-xl p-6 mb-6">
+                        <label className="block text-emerald-400 font-bold font-mono text-xs uppercase mb-2">
+                            Target Distance (km)
+                        </label>
+                        <div className="flex items-center gap-4">
+                            <input
+                                type="number"
+                                min="0.5"
+                                max="10"
+                                step="0.1"
+                                value={targetDistance}
+                                onChange={(e) => setTargetDistance(parseFloat(e.target.value) || 2.0)}
+                                className="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white font-mono text-xl focus:border-emerald-500 focus:outline-none transition-colors"
+                            />
+                            <span className="text-slate-500 font-mono font-bold">KM</span>
+                        </div>
+                        <p className="text-slate-500 text-xs mt-2">
+                            Estimated time: {Math.round(targetDistance * 10)} - {Math.round(targetDistance * 15)} min
+                        </p>
+                    </div>
+
+                    <div className="flex gap-4 w-full">
+                        <button
+                            onClick={() => setSelectedMode(null)}
+                            className="flex-1 py-4 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                        >
+                            <ChevronLeft size={20} />
+                            BACK
+                        </button>
+                        <button
+                            onClick={handleStartExtraction}
+                            className="flex-[2] py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 uppercase tracking-wide shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)]"
+                        >
+                            <Play size={20} fill="currentColor" />
+                            Start Mission
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-md overflow-y-auto">

@@ -3,16 +3,17 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useGameStore } from '../store/useGameStore';
 import * as turf from '@turf/turf';
+import { MAPBOX_TOKEN } from '../utils/config';
 
 // Set Mapbox Access Token
-mapboxgl.accessToken = 'pk.eyJ1IjoidG9tZ3VlZ3VlbiIsImEiOiJjbWp4OHJ5eHozazR3M2NzZWZic2x6ZnZvIn0.VvmJM17B1Bn5VxTIs-tGFw';
+mapboxgl.accessToken = MAPBOX_TOKEN;
 
 const GameMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
 
   // Connect to store
-  const { userPosition, extractionPoint, shadowPosition, status, exploredPolygon } = useGameStore();
+  const { userPosition, extractionPoint, shadowPosition, status, exploredPolygon, routeCoordinates } = useGameStore();
 
   // Initialize Map
   useEffect(() => {
@@ -69,6 +70,27 @@ const GameMap: React.FC = () => {
         });
         */
 
+        // --- Route Source & Layer ---
+        map.current.addSource('route', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] }
+        });
+
+        map.current.addLayer({
+          id: 'route-line',
+          type: 'line',
+          source: 'route',
+          layout: {
+            'line-join': 'round',
+            'line-cap': 'round'
+          },
+          paint: {
+            'line-color': '#fbbf24', // Amber-400
+            'line-width': 4,
+            'line-opacity': 0.8,
+            'line-dasharray': [2, 2] // Dashed
+          }
+        });
 
         // --- Extraction Point Source & Layer ---
         map.current.addSource('extraction', {
@@ -195,6 +217,27 @@ const GameMap: React.FC = () => {
       }
     }
   }, [exploredPolygon]);
+
+  // Sync Route
+  useEffect(() => {
+    if (!map.current || !map.current.isStyleLoaded()) return;
+
+    const source = map.current.getSource('route') as mapboxgl.GeoJSONSource;
+    if (source) {
+      if (routeCoordinates) {
+        source.setData({
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: routeCoordinates
+          },
+          properties: {}
+        });
+      } else {
+        source.setData({ type: 'FeatureCollection', features: [] });
+      }
+    }
+  }, [routeCoordinates]);
 
   // Sync Extraction Point
   useEffect(() => {
