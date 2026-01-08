@@ -5,13 +5,34 @@ import { Target, ShieldAlert, Play, Map as MapIcon, ChevronLeft } from 'lucide-r
 export const MainMenu: React.FC = () => {
     const { setGameMode, setStatus, targetDistance, setTargetDistance } = useGameStore();
     const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
+    const [inputValue, setInputValue] = useState(targetDistance.toString());
 
     const handleSelectMode = (mode: GameMode) => {
         setSelectedMode(mode);
+        setInputValue(targetDistance.toString());
+    };
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setInputValue(val);
+
+        // Only update store if it's a valid number
+        const parsed = parseFloat(val);
+        if (!isNaN(parsed)) {
+            setTargetDistance(parsed);
+        }
     };
 
     const handleStartGame = () => {
         if (selectedMode) {
+            // Validate before starting
+            let parsed = parseFloat(inputValue);
+            if (isNaN(parsed) || parsed <= 0) {
+                parsed = 2.0; // Fallback
+                setTargetDistance(parsed);
+            }
+            // Clamp if needed (optional)
+
             setGameMode(selectedMode);
             setStatus('ACTIVE');
         }
@@ -45,14 +66,14 @@ export const MainMenu: React.FC = () => {
                                 min="0.5"
                                 max="10"
                                 step="0.1"
-                                value={targetDistance}
-                                onChange={(e) => setTargetDistance(parseFloat(e.target.value) || 2.0)}
+                                value={inputValue}
+                                onChange={handleInputChange}
                                 className={`flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-3 text-white font-mono text-xl focus:outline-none transition-colors ${selectedMode === 'EXTRACTION' ? 'focus:border-emerald-500' : 'focus:border-red-500'}`}
                             />
                             <span className="text-slate-500 font-mono font-bold">KM</span>
                         </div>
                         <p className="text-slate-500 text-xs mt-2">
-                            Estimated time: {Math.round(targetDistance * 10)} - {Math.round(targetDistance * 15)} min
+                            Estimated time: {Math.round((parseFloat(inputValue) || 0) * 10)} - {Math.round((parseFloat(inputValue) || 0) * 15)} min
                         </p>
                     </div>
 
