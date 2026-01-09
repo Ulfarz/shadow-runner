@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGameStore } from '../store/useGameStore';
-import { Locate, Activity, Clock, Ghost, MapPin, Zap, Target } from 'lucide-react';
+import { Clock, Ghost, MapPin, Zap, Target } from 'lucide-react';
 
 export const GameHUD: React.FC = () => {
     const userPosition = useGameStore((state) => state.userPosition);
@@ -12,9 +12,9 @@ export const GameHUD: React.FC = () => {
     const bonusMissions = useGameStore((state) => state.bonusMissions);
     const status = useGameStore((state) => state.status);
 
-    // Helper to format speed from m/s to km/h
+    // Format speed from m/s to km/h
     const formatSpeed = (speed: number | null) => {
-        if (speed === null) return '--';
+        if (speed === null) return '0.0';
         return (speed * 3.6).toFixed(1);
     };
 
@@ -36,116 +36,112 @@ export const GameHUD: React.FC = () => {
     const speedProgress = speedMission?.progress || 0;
     const speedDuration = speedMission?.duration || 30;
 
+    // Hide HUD when not active
+    if (status !== 'ACTIVE') return null;
+
     return (
-        <div className="absolute inset-0 pointer-events-none p-2 sm:p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] flex flex-col justify-between">
-            {/* Top Section */}
-            <div className="flex justify-between items-start gap-2">
-                {/* Left: Timer (Extraction mode only) */}
-                {gameMode === 'EXTRACTION' && status === 'ACTIVE' ? (
-                    <div className="flex items-center gap-1.5 sm:gap-2 bg-slate-900/90 text-white px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-slate-700 backdrop-blur-sm">
-                        <Clock size={16} className="text-amber-400 shrink-0" />
-                        <span className="font-mono text-lg sm:text-xl font-bold">
+        <div className="fixed inset-x-0 top-0 bottom-0 pointer-events-none z-50 flex flex-col">
+            {/* TOP BAR - Timer + Distance */}
+            <div className="flex justify-between items-center p-3 pt-[max(12px,env(safe-area-inset-top))]">
+                {/* Timer */}
+                {gameMode === 'EXTRACTION' && (
+                    <div className="flex items-center gap-2 bg-black/80 px-3 py-2 rounded-full">
+                        <Clock size={16} className="text-amber-400" />
+                        <span className="font-mono text-white text-lg font-bold tabular-nums">
                             {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
                         </span>
                     </div>
-                ) : (
-                    <div />
                 )}
+                {gameMode !== 'EXTRACTION' && <div />}
 
-                {/* Right: GPS Status - Compact on mobile */}
-                <div className="flex items-center gap-1.5 bg-slate-900/80 text-emerald-400 px-2 py-1 rounded border border-emerald-500/30 backdrop-blur-sm">
-                    <Locate size={14} className={userPosition ? 'animate-pulse shrink-0' : 'opacity-50 shrink-0'} />
-                    <span className="font-mono text-xs font-bold hidden sm:inline">
-                        {userPosition ? 'GPS OK' : 'GPS...'}
-                    </span>
-                </div>
-            </div>
-
-            {/* Middle Section: Bonus Objectives (Extraction mode) - Compact cards */}
-            {gameMode === 'EXTRACTION' && status === 'ACTIVE' && (
-                <div className="absolute top-12 sm:top-14 left-2 sm:left-4 right-2 sm:right-auto flex flex-col gap-1.5 sm:gap-2 max-w-[200px] sm:max-w-none">
-                    {/* Distance to Extraction */}
-                    <div className="flex items-center gap-1.5 bg-slate-900/90 px-2 py-1 rounded border border-emerald-500/30 backdrop-blur-sm">
-                        <Target size={14} className="text-emerald-400 shrink-0" />
-                        <span className="font-mono text-xs text-slate-300 truncate">
-                            <span className="text-emerald-400 font-bold">{distanceToExtraction ? Math.round(distanceToExtraction) : '--'}m</span>
+                {/* Distance to extraction */}
+                {gameMode === 'EXTRACTION' && distanceToExtraction && (
+                    <div className="flex items-center gap-2 bg-emerald-900/80 px-3 py-2 rounded-full">
+                        <Target size={16} className="text-emerald-400" />
+                        <span className="font-mono text-emerald-300 text-lg font-bold tabular-nums">
+                            {distanceToExtraction > 1000
+                                ? `${(distanceToExtraction / 1000).toFixed(1)}km`
+                                : `${Math.round(distanceToExtraction)}m`}
                         </span>
                     </div>
+                )}
+            </div>
 
-                    {/* Checkpoint Status */}
-                    <div className={`flex items-center gap-1.5 bg-slate-900/90 px-2 py-1 rounded border backdrop-blur-sm ${checkpointReached ? 'border-emerald-500/50' : 'border-amber-500/30'}`}>
-                        <MapPin size={14} className={`shrink-0 ${checkpointReached ? 'text-emerald-400' : 'text-amber-400'}`} />
-                        <span className={`font-mono text-xs truncate ${checkpointReached ? 'text-emerald-400' : 'text-slate-300'}`}>
-                            {checkpointReached ? '✓ Checkpoint' : 'Checkpoint'}
-                        </span>
+            {/* LEFT SIDE - Objectives (only in extraction mode) */}
+            {gameMode === 'EXTRACTION' && (
+                <div className="absolute left-3 top-20 flex flex-col gap-2">
+                    {/* Checkpoint */}
+                    <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-full text-xs font-mono font-bold ${checkpointReached
+                        ? 'bg-emerald-500/90 text-white'
+                        : 'bg-black/70 text-amber-400'
+                        }`}>
+                        <MapPin size={12} />
+                        <span>{checkpointReached ? '✓' : '○'} CP</span>
                     </div>
 
                     {/* Speed Challenge */}
                     {speedMission && !speedMission.completed && (
-                        <div className="flex items-center gap-1.5 bg-slate-900/90 px-2 py-1 rounded border border-purple-500/30 backdrop-blur-sm">
-                            <Zap size={14} className="text-purple-400 shrink-0" />
-                            <div className="flex-1 min-w-0">
-                                <div className="w-16 sm:w-20 h-1 bg-slate-700 rounded-full overflow-hidden">
-                                    <div
-                                        className="h-full bg-purple-500 transition-all duration-200"
-                                        style={{ width: `${Math.min((speedProgress / speedDuration) * 100, 100)}%` }}
-                                    />
-                                </div>
+                        <div className="flex items-center gap-2 bg-black/70 px-2.5 py-1.5 rounded-full">
+                            <Zap size={12} className="text-purple-400" />
+                            <div className="w-12 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-purple-500 transition-all"
+                                    style={{ width: `${(speedProgress / speedDuration) * 100}%` }}
+                                />
                             </div>
-                            <span className="font-mono text-[10px] text-purple-400">{Math.round(speedProgress)}s</span>
                         </div>
                     )}
                     {speedMission?.completed && (
-                        <div className="flex items-center gap-1.5 bg-slate-900/90 px-2 py-1 rounded border border-emerald-500/50 backdrop-blur-sm">
-                            <Zap size={14} className="text-emerald-400 shrink-0" />
-                            <span className="font-mono text-xs text-emerald-400">✓ Speed</span>
+                        <div className="flex items-center gap-2 bg-emerald-500/90 px-2.5 py-1.5 rounded-full text-xs font-mono font-bold text-white">
+                            <Zap size={12} />
+                            <span>✓ SPD</span>
                         </div>
                     )}
 
                     {/* Shadow Speed */}
-                    <div className="flex items-center gap-1.5 bg-slate-900/90 px-2 py-1 rounded border border-red-500/30 backdrop-blur-sm">
-                        <Ghost size={14} className="text-red-400 shrink-0" />
-                        <span className="font-mono text-xs text-red-400 font-bold">
-                            {currentShadowSpeed.toFixed(0)} km/h
+                    <div className="flex items-center gap-2 bg-red-900/80 px-2.5 py-1.5 rounded-full">
+                        <Ghost size={12} className="text-red-400" />
+                        <span className="text-xs font-mono font-bold text-red-300">
+                            {currentShadowSpeed.toFixed(0)}
                         </span>
                     </div>
                 </div>
             )}
 
-            {/* Bottom Center Stats - Compact on mobile */}
-            <div className="w-full flex justify-center gap-2 sm:gap-4">
-                {/* SPEED */}
-                <div className="flex flex-col items-center bg-slate-900/90 px-3 py-2 sm:p-3 rounded-lg border border-slate-700 backdrop-blur-md min-w-[70px] sm:min-w-[90px]">
-                    <div className="flex items-center gap-1 text-slate-400 mb-0.5">
-                        <Activity size={12} className="sm:w-4 sm:h-4" />
-                        <span className="text-[10px] sm:text-xs font-bold tracking-wider">SPEED</span>
-                    </div>
-                    <div className="flex items-baseline gap-0.5">
-                        <span className="text-xl sm:text-2xl font-black text-white font-mono">
-                            {formatSpeed(userPosition?.speed || 0)}
-                        </span>
+            {/* BOTTOM BAR - Speed indicator */}
+            <div className="mt-auto pb-[max(16px,env(safe-area-inset-bottom))] px-4">
+                <div className="flex justify-center">
+                    <div className="bg-black/80 backdrop-blur-sm rounded-2xl px-6 py-3 flex items-center gap-4">
+                        <div className="text-center">
+                            <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wide mb-0.5">
+                                YOUR SPEED
+                            </div>
+                            <div className="flex items-baseline justify-center gap-1">
+                                <span className="text-3xl font-black text-white font-mono tabular-nums">
+                                    {formatSpeed(userPosition?.speed || 0)}
+                                </span>
+                                <span className="text-xs text-slate-500 font-bold">km/h</span>
+                            </div>
+                        </div>
+
+                        {gameMode === 'EXTRACTION' && (
+                            <>
+                                <div className="w-px h-10 bg-slate-700" />
+                                <div className="text-center">
+                                    <div className="text-red-400 text-[10px] font-bold uppercase tracking-wide mb-0.5">
+                                        SHADOW
+                                    </div>
+                                    <div className="flex items-baseline justify-center gap-1">
+                                        <span className="text-3xl font-black text-red-400 font-mono tabular-nums">
+                                            {currentShadowSpeed.toFixed(0)}
+                                        </span>
+                                        <span className="text-xs text-slate-500 font-bold">km/h</span>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
-
-                {/* Distance (instead of heading for mobile utility) */}
-                {gameMode === 'EXTRACTION' && distanceToExtraction && (
-                    <div className="flex flex-col items-center bg-slate-900/90 px-3 py-2 sm:p-3 rounded-lg border border-emerald-700/50 backdrop-blur-md min-w-[70px] sm:min-w-[90px]">
-                        <div className="flex items-center gap-1 text-emerald-400 mb-0.5">
-                            <Target size={12} className="sm:w-4 sm:h-4" />
-                            <span className="text-[10px] sm:text-xs font-bold tracking-wider">DIST</span>
-                        </div>
-                        <div className="flex items-baseline gap-0.5">
-                            <span className="text-xl sm:text-2xl font-black text-emerald-400 font-mono">
-                                {distanceToExtraction > 1000
-                                    ? (distanceToExtraction / 1000).toFixed(1)
-                                    : Math.round(distanceToExtraction)}
-                            </span>
-                            <span className="text-[10px] text-slate-500 font-bold">
-                                {distanceToExtraction > 1000 ? 'km' : 'm'}
-                            </span>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );

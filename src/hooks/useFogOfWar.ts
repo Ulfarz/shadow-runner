@@ -1,86 +1,27 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import * as turf from '@turf/turf';
 import { useGameStore } from '../store/useGameStore';
-import { getExploredPolygon, saveExploredPolygon } from '../utils/db';
-import { Feature, Polygon, MultiPolygon } from 'geojson';
 
-const SAVE_DEBOUNCE_MS = 2000;
+// Visibility radius in kilometers
+const VISIBILITY_RADIUS_KM = 0.05; // 50 meters
 
 export const useFogOfWar = () => {
   const userPosition = useGameStore((state) => state.userPosition);
-  const exploredPolygon = useGameStore((state) => state.exploredPolygon);
   const setExploredPolygon = useGameStore((state) => state.setExploredPolygon);
-  const gameMode = useGameStore((state) => state.gameMode);
 
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Ref to hold the latest polygon to avoid dependency loops in the position effect
-  const polygonRef = useRef<Feature<Polygon | MultiPolygon> | null>(null);
-
-  // Sync ref with store
-  useEffect(() => {
-    polygonRef.current = exploredPolygon;
-  }, [exploredPolygon]);
-
-  // Load initial state from DB
-  useEffect(() => {
-    const loadState = async () => {
-      try {
-        const storedPolygon = await getExploredPolygon();
-        if (storedPolygon) {
-          setExploredPolygon(storedPolygon);
-        }
-      } catch (error) {
-        console.error('Failed to load explored polygon:', error);
-      }
-    };
-    loadState();
-  }, [setExploredPolygon]);
-
-  // Update logic on position change
+  // Update visibility circle whenever position changes
   useEffect(() => {
     if (!userPosition) return;
 
-    // Visibility Radius: 50m for all modes
-    // The map reveals as the player moves
-    const radius = 0.05; // 50m in kilometers
-
-    const currentPolygon = polygonRef.current;
-
+    // Create a perfect circle around current player position
     const userPoint = turf.point([userPosition.longitude, userPosition.latitude]);
-    const newVisibility = turf.circle(userPoint, radius, {
-      units: 'kilometers', // using km to be explicit matching the values above
-      steps: 32
+    const visibilityCircle = turf.circle(userPoint, VISIBILITY_RADIUS_KM, {
+      units: 'kilometers',
+      steps: 64 // More steps = smoother circle
     });
 
-    let updatedPolygon: Feature<Polygon | MultiPolygon>;
+    // Set this as the ONLY visible area (no accumulation)
+    setExploredPolygon(visibilityCircle);
 
-    if (!currentPolygon) {
-      updatedPolygon = newVisibility;
-    } else {
-      try {
-        const unionResult = turf.union(turf.featureCollection([currentPolygon, newVisibility]));
-        if (unionResult) {
-          updatedPolygon = unionResult;
-        } else {
-          updatedPolygon = currentPolygon;
-        }
-      } catch (err) {
-        console.error('Error unioning polygons:', err);
-        return;
-      }
-    }
-
-    setExploredPolygon(updatedPolygon);
-
-    // Debounced Save
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      saveExploredPolygon(updatedPolygon);
-    }, SAVE_DEBOUNCE_MS);
-
-  }, [userPosition, setExploredPolygon, gameMode]);
+  }, [userPosition, setExploredPolygon]);
 };
