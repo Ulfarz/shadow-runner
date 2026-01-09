@@ -81,6 +81,10 @@ export interface GameState {
   setCheckpoint: (point: { latitude: number; longitude: number } | null) => void;
   setCheckpointReached: (reached: boolean) => void;
 
+  // Map control callback
+  centerOnPlayer: (() => void) | null;
+  setCenterOnPlayer: (callback: (() => void) | null) => void;
+
   resetGame: () => void;
 }
 
@@ -138,6 +142,10 @@ export const useGameStore = create<GameState>((set) => ({
   setFinalRank: (rank) => set({ finalRank: rank }),
   setCheckpoint: (point) => set({ checkpoint: point }),
   setCheckpointReached: (reached) => set({ checkpointReached: reached }),
+
+  // Map control
+  centerOnPlayer: null,
+  setCenterOnPlayer: (callback) => set({ centerOnPlayer: callback }),
 
   resetGame: () => set({
     status: 'IDLE',

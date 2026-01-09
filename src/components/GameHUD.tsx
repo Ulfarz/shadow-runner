@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGameStore } from '../store/useGameStore';
-import { Clock, Ghost, MapPin, Zap, Target } from 'lucide-react';
+import { Clock, Ghost, MapPin, Zap, Target, Crosshair } from 'lucide-react';
 
 export const GameHUD: React.FC = () => {
     const userPosition = useGameStore((state) => state.userPosition);
@@ -11,6 +11,7 @@ export const GameHUD: React.FC = () => {
     const checkpointReached = useGameStore((state) => state.checkpointReached);
     const bonusMissions = useGameStore((state) => state.bonusMissions);
     const status = useGameStore((state) => state.status);
+    const centerOnPlayer = useGameStore((state) => state.centerOnPlayer);
 
     // Format speed from m/s to km/h
     const formatSpeed = (speed: number | null) => {
@@ -110,7 +111,7 @@ export const GameHUD: React.FC = () => {
 
             {/* BOTTOM BAR - Speed indicator */}
             <div className="mt-auto pb-[max(16px,env(safe-area-inset-bottom))] px-4">
-                <div className="flex justify-center">
+                <div className="flex justify-center items-end gap-3">
                     <div className="bg-black/80 backdrop-blur-sm rounded-2xl px-6 py-3 flex items-center gap-4">
                         <div className="text-center">
                             <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wide mb-0.5">
@@ -141,6 +142,15 @@ export const GameHUD: React.FC = () => {
                             </>
                         )}
                     </div>
+
+                    {/* Center on Player Button */}
+                    <button
+                        onClick={() => centerOnPlayer?.()}
+                        className="pointer-events-auto bg-black/80 backdrop-blur-sm rounded-full p-3 active:bg-slate-700 transition-colors"
+                        aria-label="Center on player"
+                    >
+                        <Crosshair size={24} className="text-white" />
+                    </button>
                 </div>
             </div>
         </div>

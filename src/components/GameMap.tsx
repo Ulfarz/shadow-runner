@@ -19,7 +19,21 @@ const GameMap: React.FC = () => {
   const map = useRef<mapboxgl.Map | null>(null);
 
   // Connect to store
-  const { userPosition, extractionPoint, shadowPosition, status, exploredPolygon, routeCoordinates, checkpoint, checkpointReached } = useGameStore();
+  const { userPosition, extractionPoint, shadowPosition, status, exploredPolygon, routeCoordinates, checkpoint, checkpointReached, setCenterOnPlayer } = useGameStore();
+
+  // Register centerOnPlayer callback
+  useEffect(() => {
+    setCenterOnPlayer(() => {
+      if (map.current && userPosition) {
+        map.current.flyTo({
+          center: [userPosition.longitude, userPosition.latitude],
+          zoom: 17,
+          duration: 500
+        });
+      }
+    });
+    return () => setCenterOnPlayer(null);
+  }, [userPosition, setCenterOnPlayer]);
 
   // Initialize Map
   useEffect(() => {
