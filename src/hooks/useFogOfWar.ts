@@ -29,21 +29,28 @@ export const useFogOfWar = () => {
     const userPoint = turf.point([userPosition.longitude, userPosition.latitude]);
     const visibilityCircle = turf.circle(userPoint, VISIBILITY_RADIUS_KM, {
       units: 'kilometers',
-      steps: 32 // Slightly fewer steps for performance when merging
+      steps: 64 // smoother circle
     });
 
     // Merge with previously explored areas
     if (exploredAreaRef.current) {
       try {
+        // small buffer to fix potential topology errors before union
+        const currentPoly = exploredAreaRef.current; // turf.buffer(exploredAreaRef.current, 0.0001, { units: 'kilometers' });
+
         const merged = turf.union(
-          turf.featureCollection([exploredAreaRef.current, visibilityCircle])
+          turf.featureCollection([currentPoly as Feature<Polygon | MultiPolygon>, visibilityCircle])
         );
+
         if (merged) {
           exploredAreaRef.current = merged as Feature<Polygon | MultiPolygon>;
         }
       } catch (e) {
-        // If union fails, just use current circle
-        console.warn("Failed to merge explored areas:", e);
+        // If union fails, just use current circle or keep previous state log error but don't crash
+        console.warn("Failed to merge explored areas, resetting to current view to recover:", e);
+        // Fallback: if merge fails extremely, we might at least keep the current circle visible
+        // But usually we want to keep what we had. 
+        // A simple recovery is to just set it to the visibility circle to avoid sticking to a corrupt polygon
         exploredAreaRef.current = visibilityCircle;
       }
     } else {
@@ -54,5 +61,5 @@ export const useFogOfWar = () => {
     // Update the store with accumulated explored area
     setExploredPolygon(exploredAreaRef.current);
 
-  }, [userPosition, setExploredPolygon]);
+  }, [userPosition, setExploredPolygon]); // status dependency removed to avoid reset loops if status changes while active
 };

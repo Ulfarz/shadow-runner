@@ -236,15 +236,25 @@ const GameMap: React.FC = () => {
 
           map.current.addLayer({
             id: 'player-radius',
-            type: 'circle',
+            type: 'fill',
             source: 'player',
+            filter: ['==', 'type', 'radius'],
             paint: {
-              'circle-radius': 50, // Matches EXPLORATION_RADIUS_M approx in pixels/zoom
-              'circle-color': '#3b82f6', // Blue-500
-              'circle-opacity': 0.1,
-              'circle-stroke-width': 1,
-              'circle-stroke-color': '#60a5fa',
-              'circle-stroke-opacity': 0.5
+              'fill-color': '#3b82f6', // Blue-500
+              'fill-opacity': 0.15,
+              'fill-outline-color': '#60a5fa'
+            }
+          });
+
+          map.current.addLayer({
+            id: 'player-radius-outline',
+            type: 'line',
+            source: 'player',
+            filter: ['==', 'type', 'radius'],
+            paint: {
+              'line-color': '#60a5fa',
+              'line-width': 1,
+              'line-opacity': 0.5
             }
           });
 
@@ -252,6 +262,7 @@ const GameMap: React.FC = () => {
             id: 'player-marker',
             type: 'circle',
             source: 'player',
+            filter: ['==', 'type', 'point'],
             paint: {
               'circle-radius': 6,
               'circle-color': '#3b82f6',
@@ -379,20 +390,31 @@ const GameMap: React.FC = () => {
     }
   }, [shadowPosition]);
 
-  // Sync Player Position
+  // Sync Player Position & Radius
   useEffect(() => {
     if (!map.current || !map.current.isStyleLoaded()) return;
 
     const source = map.current.getSource('player') as mapboxgl.GeoJSONSource;
     if (source) {
       if (userPosition) {
+        const point = turf.point([userPosition.longitude, userPosition.latitude]);
+        // Create 50m radius circle for visual representation
+        const radiusPoly = turf.circle(point, 0.05, { units: 'kilometers', steps: 64 });
+
         source.setData({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [userPosition.longitude, userPosition.latitude]
-          },
-          properties: {}
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              geometry: point.geometry,
+              properties: { type: 'point' }
+            },
+            {
+              type: 'Feature',
+              geometry: radiusPoly.geometry,
+              properties: { type: 'radius' }
+            }
+          ]
         });
       } else {
         source.setData({ type: 'FeatureCollection', features: [] });
