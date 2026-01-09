@@ -5,8 +5,14 @@ import { useGameStore } from '../store/useGameStore';
 import * as turf from '@turf/turf';
 import { MAPBOX_TOKEN } from '../utils/config';
 
-// Set Mapbox Access Token
+// Set Mapbox Access Token and disable telemetry
 mapboxgl.accessToken = MAPBOX_TOKEN;
+
+// Disable Mapbox telemetry/analytics to prevent network errors
+// @ts-ignore - telemetry is not in TypeScript types but exists
+if (mapboxgl.prewarm) mapboxgl.prewarm();
+// @ts-ignore
+mapboxgl.setTelemetryEnabled && mapboxgl.setTelemetryEnabled(false);
 
 const GameMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
