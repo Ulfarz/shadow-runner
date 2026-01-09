@@ -1,6 +1,7 @@
 import GameMap from './components/GameMap'
 import { GameHUD } from './components/GameHUD'
 import { MainMenu } from './components/MainMenu'
+import { EndGameScreen } from './components/EndGameScreen'
 import { useWakeLock } from './hooks/useWakeLock'
 import { useGeolocation } from './hooks/useGeolocation'
 import { useGameLogic } from './hooks/useGameLogic'
@@ -20,6 +21,7 @@ function App() {
       {status === 'IDLE' && <MainMenu />}
       <GameMap />
       <GameHUD />
+      <EndGameScreen />
     </main>
   )
 }

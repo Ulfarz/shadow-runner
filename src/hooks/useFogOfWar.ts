@@ -41,10 +41,9 @@ export const useFogOfWar = () => {
   useEffect(() => {
     if (!userPosition) return;
 
-    // Dynamic Radius based on Mode
-    // EXTRACTION: 5m (Very hard visibility)
-    // SURVIVAL: 50m (Standard visibility)
-    const radius = gameMode === 'EXTRACTION' ? 0.005 : 0.05; // turf.circle uses km by default or units 'meters'
+    // Visibility Radius: 50m for all modes
+    // The map reveals as the player moves
+    const radius = 0.05; // 50m in kilometers
 
     const currentPolygon = polygonRef.current;
 

@@ -1,15 +1,40 @@
 import { useEffect, useRef } from 'react';
-import { useGameStore } from '../store/useGameStore';
+import { useGameStore, BonusMission, MissionRank } from '../store/useGameStore';
 import * as turf from '@turf/turf';
 import { MAPBOX_TOKEN } from '../utils/config';
 
 // Constants
 const EXTRACTION_RADIUS_M = 50; // Win radius
 const SHADOW_CATCH_RADIUS_M = 20; // Loss radius
-const SHADOW_SPEED_KPH = 15; // Shadow speed in km/h
+const CHECKPOINT_RADIUS_M = 30; // Checkpoint trigger radius
 
 // Helper: Convert km/h to m/s
 const kphToMps = (kph: number) => kph / 3.6;
+
+// Rank calculation
+const calculateRank = (
+    timeSeconds: number,
+    targetDistanceKm: number,
+    completedBonuses: number,
+    totalBonuses: number,
+    caught: boolean
+): MissionRank => {
+    if (caught) return 'F';
+
+
+    const timeRatios = {
+        S: targetDistanceKm * 6 * 60,   // 6 min/km
+        A: targetDistanceKm * 8 * 60,   // 8 min/km
+        B: targetDistanceKm * 10 * 60,  // 10 min/km
+        C: targetDistanceKm * 12 * 60,  // 12 min/km
+    };
+
+    if (timeSeconds <= timeRatios.S && completedBonuses === totalBonuses) return 'S';
+    if (timeSeconds <= timeRatios.A && completedBonuses >= 2) return 'A';
+    if (timeSeconds <= timeRatios.B && completedBonuses >= 1) return 'B';
+    if (timeSeconds <= timeRatios.C) return 'C';
+    return 'D';
+};
 
 export const useGameLogic = () => {
     const {
@@ -19,15 +44,34 @@ export const useGameLogic = () => {
         extractionPoint,
         shadowPosition,
         targetDistance,
+        checkpoint,
+        checkpointReached,
+        bonusMissions,
+        gameStartTime,
+        currentShadowSpeed,
+        baseShadowSpeed,
+        maxShadowSpeed,
+        initialDistanceToExtraction,
         setStatus,
         setExtractionPoint,
         setShadowPosition,
         setShadowDistance,
-        setRouteCoordinates
+        setRouteCoordinates,
+        setGameStartTime,
+        setGameEndTime,
+        setCurrentShadowSpeed,
+        setDistanceToExtraction,
+        setInitialDistanceToExtraction,
+        setBonusMissions,
+        updateBonusMission,
+        setFinalRank,
+        setCheckpoint,
+        setCheckpointReached
     } = useGameStore();
 
     const lastUpdateRef = useRef<number>(Date.now());
     const requestRef = useRef<number>();
+    const speedChallengeRef = useRef<number>(0); // Track speed challenge progress
 
     // Start Game Logic
     useEffect(() => {
@@ -35,15 +79,16 @@ export const useGameLogic = () => {
             const initGame = async () => {
                 const userPoint = turf.point([userPosition.longitude, userPosition.latitude]);
 
+                // Start timer
+                setGameStartTime(Date.now());
+
                 // 1. Generate Extraction Point (Only for EXTRACTION mode)
                 if (gameMode === 'EXTRACTION') {
                     const bearing = Math.random() * 360;
-                    // Calculate rough destination based on target distance
                     const roughDest = turf.destination(userPoint, targetDistance, bearing);
                     const [roughLng, roughLat] = roughDest.geometry.coordinates;
 
                     try {
-                        // Fetch real walking route
                         const response = await fetch(
                             `https://api.mapbox.com/directions/v5/mapbox/walking/${userPosition.longitude},${userPosition.latitude};${roughLng},${roughLat}?geometries=geojson&access_token=${MAPBOX_TOKEN}`
                         );
@@ -53,55 +98,83 @@ export const useGameLogic = () => {
                             const route = data.routes[0];
                             const coords = route.geometry.coordinates;
 
-                            // Only show route if NOT EXTRACTION mode (Extraction = Hard mode, no guide)
-                            if (gameMode !== 'EXTRACTION') {
-                                setRouteCoordinates(coords);
-                            } else {
-                                setRouteCoordinates(null); // Clear any existing route
-                            }
+                            // No route display in Extraction mode
+                            setRouteCoordinates(null);
 
-                            // Set actual extraction point to the end of the route
+                            // Set extraction point
                             const endPoint = coords[coords.length - 1];
                             setExtractionPoint({ latitude: endPoint[1], longitude: endPoint[0] });
+
+                            // Calculate initial distance
+                            const extractionGeo = turf.point(endPoint);
+                            const initDist = turf.distance(userPoint, extractionGeo, { units: 'meters' });
+                            setInitialDistanceToExtraction(initDist);
+                            setDistanceToExtraction(initDist);
+
+                            // Generate checkpoint at ~50% of route
+                            const midIndex = Math.floor(coords.length / 2);
+                            const midPoint = coords[midIndex];
+                            setCheckpoint({ latitude: midPoint[1], longitude: midPoint[0] });
+
+                            // Generate bonus missions
+                            const missions: BonusMission[] = [
+                                {
+                                    id: 'checkpoint',
+                                    type: 'CHECKPOINT',
+                                    description: 'Pass through the checkpoint',
+                                    completed: false,
+                                    position: { latitude: midPoint[1], longitude: midPoint[0] }
+                                },
+                                {
+                                    id: 'time_bonus',
+                                    type: 'TIME_BONUS',
+                                    description: `Finish in under ${Math.round(targetDistance * 6)} min`,
+                                    completed: false,
+                                    targetTime: targetDistance * 6 * 60 // S rank time
+                                },
+                                {
+                                    id: 'speed_challenge',
+                                    type: 'SPEED_CHALLENGE',
+                                    description: 'Maintain 8+ km/h for 30s',
+                                    completed: false,
+                                    minSpeed: 8,
+                                    duration: 30,
+                                    progress: 0
+                                }
+                            ];
+                            setBonusMissions(missions);
+
                         } else {
                             console.warn("No route found, falling back to straight line");
                             setExtractionPoint({ latitude: roughLat, longitude: roughLng });
-                            if (gameMode !== 'EXTRACTION') {
-                                setRouteCoordinates([[userPosition.longitude, userPosition.latitude], [roughLng, roughLat]]);
-                            } else {
-                                setRouteCoordinates(null);
-                            }
+                            setRouteCoordinates(null);
+
+                            const initDist = targetDistance * 1000;
+                            setInitialDistanceToExtraction(initDist);
+                            setDistanceToExtraction(initDist);
                         }
                     } catch (error) {
                         console.error("Routing error:", error);
                         setExtractionPoint({ latitude: roughLat, longitude: roughLng });
-                        if (gameMode !== 'EXTRACTION') {
-                            setRouteCoordinates([[userPosition.longitude, userPosition.latitude], [roughLng, roughLat]]);
-                        } else {
-                            setRouteCoordinates(null);
-                        }
+                        setRouteCoordinates(null);
                     }
 
-                    // Spawn Shadow behind user relative to the rough bearing
+                    // Spawn Shadow behind user
                     const shadowStart = turf.destination(userPoint, 0.5, (bearing + 180) % 360);
                     const [shadowLng, shadowLat] = shadowStart.geometry.coordinates;
                     setShadowPosition({ latitude: shadowLat, longitude: shadowLng });
 
                 } else {
-                    // SURVIVAL: Spawn a visual target point at the chosen distance
+                    // SURVIVAL mode - unchanged
                     const randomBearing = Math.random() * 360;
                     const roughDest = turf.destination(userPoint, targetDistance, randomBearing);
                     const [roughLng, roughLat] = roughDest.geometry.coordinates;
 
-                    // Set visual target (reusing extractionPoint for rendering)
                     setExtractionPoint({ latitude: roughLat, longitude: roughLng });
-
-                    // Simple straight line for visual reference
                     setRouteCoordinates([[userPosition.longitude, userPosition.latitude], [roughLng, roughLat]]);
 
-                    // Spawn Shadow at random offset
                     const shadowBearing = Math.random() * 360;
-                    const shadowStart = turf.destination(userPoint, 0.5, shadowBearing); // Start closer in survival? kept at 0.5km or adjust
+                    const shadowStart = turf.destination(userPoint, 0.5, shadowBearing);
                     const [shadowLng, shadowLat] = shadowStart.geometry.coordinates;
                     setShadowPosition({ latitude: shadowLat, longitude: shadowLng });
                 }
@@ -109,7 +182,7 @@ export const useGameLogic = () => {
 
             initGame();
         }
-    }, [userPosition, status, gameMode, shadowPosition, targetDistance, setStatus, setExtractionPoint, setShadowPosition, setRouteCoordinates]);
+    }, [userPosition, status, gameMode, shadowPosition, targetDistance]);
 
     // Game Loop (Shadow Movement & Win/Loss Check)
     useEffect(() => {
@@ -120,40 +193,93 @@ export const useGameLogic = () => {
 
         const loop = () => {
             const now = Date.now();
-            const deltaTime = (now - lastUpdateRef.current) / 1000; // Seconds
+            const deltaTime = (now - lastUpdateRef.current) / 1000;
             lastUpdateRef.current = now;
 
-            // 1. Move Shadow
             const shadowPoint = turf.point([shadowPosition.longitude, shadowPosition.latitude]);
             const userPoint = turf.point([userPosition.longitude, userPosition.latitude]);
+            const extractionGeo = turf.point([extractionPoint.longitude, extractionPoint.latitude]);
 
-            // Calculate bearing from Shadow to User
+            // Calculate distance to extraction
+            const distToExtraction = turf.distance(userPoint, extractionGeo, { units: 'meters' });
+            setDistanceToExtraction(distToExtraction);
+
+            // Dynamic Shadow Speed (Extraction mode only)
+            let shadowSpeed = currentShadowSpeed;
+            if (gameMode === 'EXTRACTION' && initialDistanceToExtraction) {
+                // Increase speed based on progress (distance covered)
+                const progress = 1 - (distToExtraction / initialDistanceToExtraction);
+                const speedIncrease = (maxShadowSpeed - baseShadowSpeed) * progress;
+                shadowSpeed = Math.min(baseShadowSpeed + speedIncrease, maxShadowSpeed);
+                setCurrentShadowSpeed(shadowSpeed);
+            }
+
+            // Move Shadow towards user
             const bearingToUser = turf.bearing(shadowPoint, userPoint);
-
-            // Move shadow towards user
-            const distanceToMoveKm = (kphToMps(SHADOW_SPEED_KPH) * deltaTime) / 1000;
+            const distanceToMoveKm = (kphToMps(shadowSpeed) * deltaTime) / 1000;
             const newShadowPos = turf.destination(shadowPoint, distanceToMoveKm, bearingToUser);
             const [newShadowLng, newShadowLat] = newShadowPos.geometry.coordinates;
-
             setShadowPosition({ latitude: newShadowLat, longitude: newShadowLng });
 
-            // 2. Check Win Condition (Only in EXTRACTION Mode)
-            if (gameMode === 'EXTRACTION' && extractionPoint) {
-                const extractionGeo = turf.point([extractionPoint.longitude, extractionPoint.latitude]);
-                const distToExtraction = turf.distance(userPoint, extractionGeo, { units: 'meters' });
+            // Check Checkpoint (Extraction mode)
+            if (gameMode === 'EXTRACTION' && checkpoint && !checkpointReached) {
+                const checkpointGeo = turf.point([checkpoint.longitude, checkpoint.latitude]);
+                const distToCheckpoint = turf.distance(userPoint, checkpointGeo, { units: 'meters' });
+                if (distToCheckpoint < CHECKPOINT_RADIUS_M) {
+                    setCheckpointReached(true);
+                    updateBonusMission('checkpoint', { completed: true });
+                }
+            }
+
+            // Check Speed Challenge (Extraction mode)
+            if (gameMode === 'EXTRACTION') {
+                const playerSpeedKph = (userPosition.speed || 0) * 3.6;
+                const speedMission = bonusMissions.find(m => m.id === 'speed_challenge');
+                if (speedMission && !speedMission.completed) {
+                    if (playerSpeedKph >= (speedMission.minSpeed || 8)) {
+                        speedChallengeRef.current += deltaTime;
+                        updateBonusMission('speed_challenge', { progress: speedChallengeRef.current });
+                        if (speedChallengeRef.current >= (speedMission.duration || 30)) {
+                            updateBonusMission('speed_challenge', { completed: true });
+                        }
+                    } else {
+                        speedChallengeRef.current = 0;
+                        updateBonusMission('speed_challenge', { progress: 0 });
+                    }
+                }
+            }
+
+            // Check Win Condition (Extraction Mode)
+            if (gameMode === 'EXTRACTION') {
                 if (distToExtraction < EXTRACTION_RADIUS_M) {
+                    const endTime = Date.now();
+                    setGameEndTime(endTime);
+
+                    const timeSeconds = gameStartTime ? (endTime - gameStartTime) / 1000 : 0;
+                    const timeMission = bonusMissions.find(m => m.id === 'time_bonus');
+                    if (timeMission && timeSeconds <= (timeMission.targetTime || Infinity)) {
+                        updateBonusMission('time_bonus', { completed: true });
+                    }
+
+                    const completedCount = bonusMissions.filter(m => m.completed).length +
+                        (timeMission && timeSeconds <= (timeMission.targetTime || Infinity) ? 1 : 0);
+
+                    const rank = calculateRank(timeSeconds, targetDistance, completedCount, bonusMissions.length, false);
+                    setFinalRank(rank);
                     setStatus('EXTRACTED');
                     return;
                 }
             }
 
-            // 3. Check Loss Condition (Distance to Shadow)
+            // Check Loss Condition
             const distToShadow = turf.distance(userPoint, shadowPoint, { units: 'meters' });
-            setShadowDistance(distToShadow); // Update distance for UI/FX
+            setShadowDistance(distToShadow);
 
             if (distToShadow < SHADOW_CATCH_RADIUS_M) {
+                setGameEndTime(Date.now());
+                setFinalRank('F');
                 setStatus('CAUGHT');
-                return; // Loop ends
+                return;
             }
 
             requestRef.current = requestAnimationFrame(loop);
@@ -164,7 +290,5 @@ export const useGameLogic = () => {
         return () => {
             if (requestRef.current) cancelAnimationFrame(requestRef.current);
         };
-    }, [status, userPosition, shadowPosition, extractionPoint, setStatus, setShadowPosition, setShadowDistance]);
+    }, [status, userPosition, shadowPosition, extractionPoint, gameMode, checkpoint, checkpointReached, bonusMissions, gameStartTime, currentShadowSpeed, initialDistanceToExtraction]);
 };
-
-

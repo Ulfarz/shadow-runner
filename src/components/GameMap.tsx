@@ -13,7 +13,7 @@ const GameMap: React.FC = () => {
   const map = useRef<mapboxgl.Map | null>(null);
 
   // Connect to store
-  const { userPosition, extractionPoint, shadowPosition, status, exploredPolygon, routeCoordinates } = useGameStore();
+  const { userPosition, extractionPoint, shadowPosition, status, exploredPolygon, routeCoordinates, checkpoint, checkpointReached } = useGameStore();
 
   // Initialize Map
   useEffect(() => {
@@ -138,6 +138,36 @@ const GameMap: React.FC = () => {
             paint: {
               'circle-radius': 10,
               'circle-color': '#34d399', // Emerald-400
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#ffffff'
+            }
+          });
+
+          // --- Checkpoint Source & Layer ---
+          map.current.addSource('checkpoint', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+          });
+
+          map.current.addLayer({
+            id: 'checkpoint-glow',
+            type: 'circle',
+            source: 'checkpoint',
+            paint: {
+              'circle-radius': 30,
+              'circle-color': '#f59e0b', // Amber-500
+              'circle-opacity': 0.3,
+              'circle-blur': 0.5
+            }
+          });
+
+          map.current.addLayer({
+            id: 'checkpoint-core',
+            type: 'circle',
+            source: 'checkpoint',
+            paint: {
+              'circle-radius': 8,
+              'circle-color': '#fbbf24', // Amber-400
               'circle-stroke-width': 2,
               'circle-stroke-color': '#ffffff'
             }
@@ -281,6 +311,27 @@ const GameMap: React.FC = () => {
       }
     }
   }, [extractionPoint]);
+
+  // Sync Checkpoint
+  useEffect(() => {
+    if (!map.current || !map.current.isStyleLoaded()) return;
+
+    const source = map.current.getSource('checkpoint') as mapboxgl.GeoJSONSource;
+    if (source) {
+      if (checkpoint && !checkpointReached) {
+        source.setData({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [checkpoint.longitude, checkpoint.latitude]
+          },
+          properties: {}
+        });
+      } else {
+        source.setData({ type: 'FeatureCollection', features: [] });
+      }
+    }
+  }, [checkpoint, checkpointReached]);
 
   // Sync Shadow Position
   useEffect(() => {
