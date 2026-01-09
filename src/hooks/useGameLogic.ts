@@ -52,7 +52,13 @@ export const useGameLogic = () => {
                         if (data.routes && data.routes.length > 0) {
                             const route = data.routes[0];
                             const coords = route.geometry.coordinates;
-                            setRouteCoordinates(coords);
+
+                            // Only show route if NOT EXTRACTION mode (Extraction = Hard mode, no guide)
+                            if (gameMode !== 'EXTRACTION') {
+                                setRouteCoordinates(coords);
+                            } else {
+                                setRouteCoordinates(null); // Clear any existing route
+                            }
 
                             // Set actual extraction point to the end of the route
                             const endPoint = coords[coords.length - 1];
@@ -60,12 +66,20 @@ export const useGameLogic = () => {
                         } else {
                             console.warn("No route found, falling back to straight line");
                             setExtractionPoint({ latitude: roughLat, longitude: roughLng });
-                            setRouteCoordinates([[userPosition.longitude, userPosition.latitude], [roughLng, roughLat]]);
+                            if (gameMode !== 'EXTRACTION') {
+                                setRouteCoordinates([[userPosition.longitude, userPosition.latitude], [roughLng, roughLat]]);
+                            } else {
+                                setRouteCoordinates(null);
+                            }
                         }
                     } catch (error) {
                         console.error("Routing error:", error);
                         setExtractionPoint({ latitude: roughLat, longitude: roughLng });
-                        setRouteCoordinates([[userPosition.longitude, userPosition.latitude], [roughLng, roughLat]]);
+                        if (gameMode !== 'EXTRACTION') {
+                            setRouteCoordinates([[userPosition.longitude, userPosition.latitude], [roughLng, roughLat]]);
+                        } else {
+                            setRouteCoordinates(null);
+                        }
                     }
 
                     // Spawn Shadow behind user relative to the rough bearing

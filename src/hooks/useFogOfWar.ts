@@ -4,19 +4,18 @@ import { useGameStore } from '../store/useGameStore';
 import { getExploredPolygon, saveExploredPolygon } from '../utils/db';
 import { Feature, Polygon, MultiPolygon } from 'geojson';
 
-const EXPLORATION_RADIUS_M = 50;
 const SAVE_DEBOUNCE_MS = 2000;
 
 export const useFogOfWar = () => {
   const userPosition = useGameStore((state) => state.userPosition);
   const exploredPolygon = useGameStore((state) => state.exploredPolygon);
   const setExploredPolygon = useGameStore((state) => state.setExploredPolygon);
-  
+  const gameMode = useGameStore((state) => state.gameMode);
+
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
+
   // Ref to hold the latest polygon to avoid dependency loops in the position effect
   const polygonRef = useRef<Feature<Polygon | MultiPolygon> | null>(null);
-
 
   // Sync ref with store
   useEffect(() => {
@@ -42,12 +41,17 @@ export const useFogOfWar = () => {
   useEffect(() => {
     if (!userPosition) return;
 
+    // Dynamic Radius based on Mode
+    // EXTRACTION: 5m (Very hard visibility)
+    // SURVIVAL: 50m (Standard visibility)
+    const radius = gameMode === 'EXTRACTION' ? 0.005 : 0.05; // turf.circle uses km by default or units 'meters'
+
     const currentPolygon = polygonRef.current;
-    
+
     const userPoint = turf.point([userPosition.longitude, userPosition.latitude]);
-    const newVisibility = turf.circle(userPoint, EXPLORATION_RADIUS_M, { 
-      units: 'meters', 
-      steps: 32 
+    const newVisibility = turf.circle(userPoint, radius, {
+      units: 'kilometers', // using km to be explicit matching the values above
+      steps: 32
     });
 
     let updatedPolygon: Feature<Polygon | MultiPolygon>;
@@ -58,9 +62,9 @@ export const useFogOfWar = () => {
       try {
         const unionResult = turf.union(turf.featureCollection([currentPolygon, newVisibility]));
         if (unionResult) {
-            updatedPolygon = unionResult;
+          updatedPolygon = unionResult;
         } else {
-            updatedPolygon = currentPolygon;
+          updatedPolygon = currentPolygon;
         }
       } catch (err) {
         console.error('Error unioning polygons:', err);
@@ -79,5 +83,5 @@ export const useFogOfWar = () => {
       saveExploredPolygon(updatedPolygon);
     }, SAVE_DEBOUNCE_MS);
 
-  }, [userPosition, setExploredPolygon]);
+  }, [userPosition, setExploredPolygon, gameMode]);
 };
