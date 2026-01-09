@@ -100,24 +100,6 @@ const GameMap: React.FC = () => {
             });
           }
 
-          // --- Fog of War Layer (Bottom) ---
-          map.current.addSource('fog', {
-            type: 'geojson',
-            data: turf.polygon([[[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]]]) // Start fully obscured
-          });
-
-
-          map.current.addLayer({
-            id: 'fog-fill',
-            type: 'fill',
-            source: 'fog',
-            paint: {
-              'fill-color': '#202020', // Fallback color while texture loads
-              'fill-opacity': 0.95
-            }
-          });
-
-
           // --- Route Source & Layer ---
           map.current.addSource('route', {
             type: 'geojson',
@@ -137,6 +119,22 @@ const GameMap: React.FC = () => {
               'line-width': 4,
               'line-opacity': 0.8,
               'line-dasharray': [2, 2] // Dashed
+            }
+          });
+
+          // --- Fog of War Layer (Above map tiles, below game elements) ---
+          map.current.addSource('fog', {
+            type: 'geojson',
+            data: turf.polygon([[[-180, -90], [180, -90], [180, 90], [-180, 90], [-180, -90]]]) // Start fully obscured
+          });
+
+          map.current.addLayer({
+            id: 'fog-fill',
+            type: 'fill',
+            source: 'fog',
+            paint: {
+              'fill-color': '#202020', // Fallback color while texture loads
+              'fill-opacity': 0.95
             }
           });
 

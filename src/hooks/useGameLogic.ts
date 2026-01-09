@@ -5,7 +5,7 @@ import { MAPBOX_TOKEN } from '../utils/config';
 
 // Constants
 const EXTRACTION_RADIUS_M = 50; // Win radius
-const SHADOW_CATCH_RADIUS_M = 20; // Loss radius
+const SHADOW_CATCH_RADIUS_M = 1; // Loss radius
 const CHECKPOINT_RADIUS_M = 30; // Checkpoint trigger radius
 
 // Helper: Convert km/h to m/s
