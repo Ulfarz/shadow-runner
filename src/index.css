@@ -17,3 +17,29 @@ body,
   overscroll-behavior: none;
   /* Prevent pull-to-refresh */
 }
+
+/* Hide all Mapbox branding and controls for clean game UI */
+.mapboxgl-ctrl-logo,
+.mapboxgl-ctrl-attrib,
+.mapboxgl-ctrl-attrib-inner,
+.mapboxgl-ctrl-bottom-left,
+.mapboxgl-ctrl-bottom-right,
+.mapboxgl-ctrl-top-right,
+.mapboxgl-ctrl-top-left,
+.mapboxgl-ctrl-group,
+.mapboxgl-ctrl-geolocate {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Ensure map fills container smoothly */
+.mapboxgl-map {
+  font-family: inherit;
+}
+
+/* Disable text selection on map for mobile */
+.mapboxgl-canvas-container {
+  user-select: none;
+  -webkit-user-select: none;
+}

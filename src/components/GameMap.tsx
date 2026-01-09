@@ -24,23 +24,30 @@ const GameMap: React.FC = () => {
         console.log("Initializing GameMap with Mapbox...");
         map.current = new mapboxgl.Map({
           container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/streets-v12', // Use streets for testing visibility
+          style: 'mapbox://styles/mapbox/dark-v11', // Dark style for better gaming feel
           center: [2.3522, 48.8566], // Default Paris
-          zoom: 14,
-          attributionControl: true, // Re-enable for debugging
+          zoom: 16, // Closer zoom for gameplay
+          attributionControl: false, // Hide Mapbox attribution
+          logoPosition: 'bottom-left', // Move logo to less intrusive position
+          pitchWithRotate: false, // Disable pitch with rotate for cleaner mobile UX
+          dragRotate: false, // Disable rotation for simpler UX
+          touchZoomRotate: true, // Keep pinch zoom
+          doubleClickZoom: false, // Disable double-click zoom
+          fadeDuration: 0, // No fade for snappier tile loading
         });
 
-        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        // GeolocateControl for centering on user (no visible button needed, triggered programmatically)
+        const geolocateControl = new mapboxgl.GeolocateControl({
+          positionOptions: { enableHighAccuracy: true },
+          trackUserLocation: true,
+          showUserLocation: false, // We draw our own player marker
+          showUserHeading: false
+        });
+        map.current.addControl(geolocateControl, 'bottom-right');
 
-        map.current.addControl(
-          new mapboxgl.GeolocateControl({
-            positionOptions: { enableHighAccuracy: true },
-            trackUserLocation: true,
-            // @ts-ignore
-            showUserHeading: true
-          }),
-          'bottom-right'
-        );
+        // Hide the geolocate button with CSS - we track automatically
+        const geolocateBtn = document.querySelector('.mapboxgl-ctrl-geolocate');
+        if (geolocateBtn) (geolocateBtn as HTMLElement).style.display = 'none';
 
         map.current.on('error', (e) => {
           console.error("Mapbox Error:", e);
