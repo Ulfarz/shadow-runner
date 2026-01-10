@@ -4,24 +4,24 @@ import { useGameStore } from '../store/useGameStore';
 import { Feature, Polygon, MultiPolygon } from 'geojson';
 
 // Visibility radius in kilometers
-const VISIBILITY_RADIUS_KM = 0.1; // 100 meters
+const VISIBILITY_RADIUS_KM = 0.05; // 50 meters
 
 export const useFogOfWar = () => {
   const userPosition = useGameStore((state) => state.userPosition);
   const status = useGameStore((state) => state.status);
   const setExploredPolygon = useGameStore((state) => state.setExploredPolygon);
 
-  // Store accumulated explored area
-  const exploredAreaRef = useRef<Feature<Polygon | MultiPolygon> | null>(null);
+  // Store accumulated explored area during ACTIVE status
+  const accumulatedAreaRef = useRef<Feature<Polygon | MultiPolygon> | null>(null);
 
-  // Reset explored area when game resets
+  // Reset accumulated area when game resets or goes back to IDLE
   useEffect(() => {
     if (status === 'IDLE') {
-      exploredAreaRef.current = null;
+      accumulatedAreaRef.current = null;
     }
   }, [status]);
 
-  // Update visibility and accumulate explored areas as player moves
+  // Update visibility and accumulate explored areas
   useEffect(() => {
     if (!userPosition) return;
 
@@ -32,34 +32,39 @@ export const useFogOfWar = () => {
       steps: 64 // smoother circle
     });
 
-    // Merge with previously explored areas
-    if (exploredAreaRef.current) {
-      try {
-        // small buffer to fix potential topology errors before union
-        const currentPoly = exploredAreaRef.current; // turf.buffer(exploredAreaRef.current, 0.0001, { units: 'kilometers' });
+    if (status === 'ACTIVE') {
+      // Accumulate explored areas
+      if (accumulatedAreaRef.current) {
+        try {
+          const merged = turf.union(
+            turf.featureCollection([
+              accumulatedAreaRef.current as Feature<Polygon | MultiPolygon>,
+              visibilityCircle
+            ])
+          );
 
-        const merged = turf.union(
-          turf.featureCollection([currentPoly as Feature<Polygon | MultiPolygon>, visibilityCircle])
-        );
-
-        if (merged) {
-          exploredAreaRef.current = merged as Feature<Polygon | MultiPolygon>;
+          if (merged) {
+            accumulatedAreaRef.current = merged as Feature<Polygon | MultiPolygon>;
+          }
+        } catch (e) {
+          console.warn("Failed to merge explored areas:", e);
+          // If union fails, we keep the previous accumulated area + the new circle 
+          // to ensure visibility doesn't break
         }
-      } catch (e) {
-        // If union fails, just use current circle or keep previous state log error but don't crash
-        console.warn("Failed to merge explored areas, resetting to current view to recover:", e);
-        // Fallback: if merge fails extremely, we might at least keep the current circle visible
-        // But usually we want to keep what we had. 
-        // A simple recovery is to just set it to the visibility circle to avoid sticking to a corrupt polygon
-        exploredAreaRef.current = visibilityCircle;
+      } else {
+        // First position in ACTIVE status
+        accumulatedAreaRef.current = visibilityCircle;
       }
+
+      // During active gameplay, always show the accumulated area
+      setExploredPolygon(accumulatedAreaRef.current);
+    } else if (status === 'IDLE') {
+      // In lobby/setup, just show the 50m radius around the player without accumulation
+      setExploredPolygon(visibilityCircle);
     } else {
-      // First position - just use the circle
-      exploredAreaRef.current = visibilityCircle;
+      // In end states (EXTRACTED, CAUGHT), keep showing the final accumulated area
+      setExploredPolygon(accumulatedAreaRef.current || visibilityCircle);
     }
 
-    // Update the store with accumulated explored area
-    setExploredPolygon(exploredAreaRef.current);
-
-  }, [userPosition, setExploredPolygon]); // status dependency removed to avoid reset loops if status changes while active
+  }, [userPosition, status, setExploredPolygon]);
 };
