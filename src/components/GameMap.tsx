@@ -19,7 +19,7 @@ const GameMap: React.FC = () => {
   const map = useRef<mapboxgl.Map | null>(null);
 
   // Connect to store
-  const { userPosition, extractionPoint, shadowPosition, status, exploredPolygon, routeCoordinates, checkpoint, checkpointReached, setCenterOnPlayer } = useGameStore();
+  const { userPosition, extractionPoint, shadowPosition, status, exploredPolygon, routeCoordinates, pathHistory, checkpoint, checkpointReached, setCenterOnPlayer } = useGameStore();
 
   // Register centerOnPlayer callback
   useEffect(() => {
@@ -119,6 +119,27 @@ const GameMap: React.FC = () => {
               'line-width': 4,
               'line-opacity': 0.8,
               'line-dasharray': [2, 2] // Dashed
+            }
+          });
+
+          // --- Path History Source & Layer ---
+          map.current.addSource('path-history', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+          });
+
+          map.current.addLayer({
+            id: 'path-history-line',
+            type: 'line',
+            source: 'path-history',
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round'
+            },
+            paint: {
+              'line-color': '#06b6d4', // Cyan-500
+              'line-width': 4,
+              'line-opacity': 0.8
             }
           });
 
@@ -325,161 +346,183 @@ const GameMap: React.FC = () => {
         source.setData({ type: 'FeatureCollection', features: [] });
       }
     }
+  }
   }, [routeCoordinates]);
 
-  // Sync Extraction Point
-  useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+// Sync Path History
+useEffect(() => {
+  if (!map.current || !map.current.isStyleLoaded()) return;
 
-    const source = map.current.getSource('extraction') as mapboxgl.GeoJSONSource;
-    if (source) {
-      if (extractionPoint) {
-        source.setData({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [extractionPoint.longitude, extractionPoint.latitude]
+  const source = map.current.getSource('path-history') as mapboxgl.GeoJSONSource;
+  if (source) {
+    if (pathHistory && pathHistory.length > 0) {
+      source.setData({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: pathHistory
+        },
+        properties: {}
+      });
+    } else {
+      source.setData({ type: 'FeatureCollection', features: [] });
+    }
+  }
+}, [pathHistory]);
+
+// Sync Extraction Point
+useEffect(() => {
+  if (!map.current || !map.current.isStyleLoaded()) return;
+
+  const source = map.current.getSource('extraction') as mapboxgl.GeoJSONSource;
+  if (source) {
+    if (extractionPoint) {
+      source.setData({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [extractionPoint.longitude, extractionPoint.latitude]
+        },
+        properties: {}
+      });
+    } else {
+      source.setData({ type: 'FeatureCollection', features: [] });
+    }
+  }
+}, [extractionPoint]);
+
+// Sync Checkpoint
+useEffect(() => {
+  if (!map.current || !map.current.isStyleLoaded()) return;
+
+  const source = map.current.getSource('checkpoint') as mapboxgl.GeoJSONSource;
+  if (source) {
+    if (checkpoint && !checkpointReached) {
+      source.setData({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [checkpoint.longitude, checkpoint.latitude]
+        },
+        properties: {}
+      });
+    } else {
+      source.setData({ type: 'FeatureCollection', features: [] });
+    }
+  }
+}, [checkpoint, checkpointReached]);
+
+// Sync Shadow Position
+useEffect(() => {
+  if (!map.current || !map.current.isStyleLoaded()) return;
+
+  const source = map.current.getSource('shadow') as mapboxgl.GeoJSONSource;
+  if (source) {
+    if (shadowPosition) {
+      source.setData({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [shadowPosition.longitude, shadowPosition.latitude]
+        },
+        properties: {}
+      });
+    } else {
+      source.setData({ type: 'FeatureCollection', features: [] });
+    }
+  }
+}, [shadowPosition]);
+
+// Sync Player Position & Radius
+useEffect(() => {
+  if (!map.current || !map.current.isStyleLoaded()) return;
+
+  const source = map.current.getSource('player') as mapboxgl.GeoJSONSource;
+  if (source) {
+    if (userPosition) {
+      const point = turf.point([userPosition.longitude, userPosition.latitude]);
+      // Create 50m radius circle for visual representation
+      const radiusPoly = turf.circle(point, 0.05, { units: 'kilometers', steps: 64 });
+
+      source.setData({
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: point.geometry,
+            properties: { type: 'point' }
           },
-          properties: {}
-        });
-      } else {
-        source.setData({ type: 'FeatureCollection', features: [] });
-      }
+          {
+            type: 'Feature',
+            geometry: radiusPoly.geometry,
+            properties: { type: 'radius' }
+          }
+        ]
+      });
+    } else {
+      source.setData({ type: 'FeatureCollection', features: [] });
     }
-  }, [extractionPoint]);
+  }
+}, [userPosition]);
 
-  // Sync Checkpoint
-  useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+// Calculate hazard opacity based on distance (start showing at 500m, max at 20m)
+const getHazardOpacity = (shadowDistance: number | null) => {
+  if (!shadowDistance && shadowDistance !== 0) return 0;
+  if (status === 'CAUGHT') return 0.8; // Max intensity
 
-    const source = map.current.getSource('checkpoint') as mapboxgl.GeoJSONSource;
-    if (source) {
-      if (checkpoint && !checkpointReached) {
-        source.setData({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [checkpoint.longitude, checkpoint.latitude]
-          },
-          properties: {}
-        });
-      } else {
-        source.setData({ type: 'FeatureCollection', features: [] });
-      }
-    }
-  }, [checkpoint, checkpointReached]);
+  const MAX_DIST = 500;
+  const MIN_DIST = 20; // Catch radius
 
-  // Sync Shadow Position
-  useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+  if (shadowDistance > MAX_DIST) return 0;
 
-    const source = map.current.getSource('shadow') as mapboxgl.GeoJSONSource;
-    if (source) {
-      if (shadowPosition) {
-        source.setData({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [shadowPosition.longitude, shadowPosition.latitude]
-          },
-          properties: {}
-        });
-      } else {
-        source.setData({ type: 'FeatureCollection', features: [] });
-      }
-    }
-  }, [shadowPosition]);
+  // Normalize 0 to 1
+  // (500 - 20) = 480 range
+  // if dist = 260, (500-260)/480 = 0.5
+  const intensity = (MAX_DIST - Math.max(shadowDistance, MIN_DIST)) / (MAX_DIST - MIN_DIST);
+  return Math.min(Math.max(intensity, 0), 0.8); // Cap at 0.8
+};
 
-  // Sync Player Position & Radius
-  useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+const hazardOpacity = useGameStore((state) => getHazardOpacity(state.shadowDistance));
 
-    const source = map.current.getSource('player') as mapboxgl.GeoJSONSource;
-    if (source) {
-      if (userPosition) {
-        const point = turf.point([userPosition.longitude, userPosition.latitude]);
-        // Create 50m radius circle for visual representation
-        const radiusPoly = turf.circle(point, 0.05, { units: 'kilometers', steps: 64 });
+return (
+  <div className="relative w-full h-screen overflow-hidden bg-slate-950">
+    <div ref={mapContainer} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
 
-        source.setData({
-          type: 'FeatureCollection',
-          features: [
-            {
-              type: 'Feature',
-              geometry: point.geometry,
-              properties: { type: 'point' }
-            },
-            {
-              type: 'Feature',
-              geometry: radiusPoly.geometry,
-              properties: { type: 'radius' }
-            }
-          ]
-        });
-      } else {
-        source.setData({ type: 'FeatureCollection', features: [] });
-      }
-    }
-  }, [userPosition]);
-
-  // Calculate hazard opacity based on distance (start showing at 500m, max at 20m)
-  const getHazardOpacity = (shadowDistance: number | null) => {
-    if (!shadowDistance && shadowDistance !== 0) return 0;
-    if (status === 'CAUGHT') return 0.8; // Max intensity
-
-    const MAX_DIST = 500;
-    const MIN_DIST = 20; // Catch radius
-
-    if (shadowDistance > MAX_DIST) return 0;
-
-    // Normalize 0 to 1
-    // (500 - 20) = 480 range
-    // if dist = 260, (500-260)/480 = 0.5
-    const intensity = (MAX_DIST - Math.max(shadowDistance, MIN_DIST)) / (MAX_DIST - MIN_DIST);
-    return Math.min(Math.max(intensity, 0), 0.8); // Cap at 0.8
-  };
-
-  const hazardOpacity = useGameStore((state) => getHazardOpacity(state.shadowDistance));
-
-  return (
-    <div className="relative w-full h-screen overflow-hidden bg-slate-950">
-      <div ref={mapContainer} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
-
-      {/* Title */}
-      <div className="absolute top-4 left-4 z-10 pointer-events-none">
-        <h1 className="text-2xl font-black text-white tracking-tighter uppercase drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-          Shadow <span className="text-red-600">Runner</span>
-        </h1>
-        {status !== 'IDLE' && (
-          <div className={`text-xs font-mono font-bold mt-1 ${status === 'ACTIVE' ? 'text-emerald-400' :
-            status === 'CAUGHT' ? 'text-red-500' :
-              status === 'EXTRACTED' ? 'text-blue-400' : 'text-slate-500'
-            }`}>
-            STATUS: {status}
-          </div>
-        )}
-      </div>
-
-      {/* Proximity Hazard Pulse */}
-      {(status === 'ACTIVE' || status === 'CAUGHT') && (
-        <div
-          className="absolute inset-0 pointer-events-none transition-opacity duration-500 ease-in-out"
-          style={{
-            boxShadow: `inset 0 0 100px 50px rgba(220, 38, 38, ${hazardOpacity})`,
-            zIndex: 5
-          }}
-        />
-      )}
-
-      {/* Explicit Border for End States */}
-      {status === 'CAUGHT' && (
-        <div className="absolute inset-0 border-[20px] border-red-600/50 pointer-events-none animate-pulse z-10" />
-      )}
-      {status === 'EXTRACTED' && (
-        <div className="absolute inset-0 border-[20px] border-emerald-600/50 pointer-events-none z-10" />
+    {/* Title */}
+    <div className="absolute top-4 left-4 z-10 pointer-events-none">
+      <h1 className="text-2xl font-black text-white tracking-tighter uppercase drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+        Shadow <span className="text-red-600">Runner</span>
+      </h1>
+      {status !== 'IDLE' && (
+        <div className={`text-xs font-mono font-bold mt-1 ${status === 'ACTIVE' ? 'text-emerald-400' :
+          status === 'CAUGHT' ? 'text-red-500' :
+            status === 'EXTRACTED' ? 'text-blue-400' : 'text-slate-500'
+          }`}>
+          STATUS: {status}
+        </div>
       )}
     </div>
-  );
+
+    {/* Proximity Hazard Pulse */}
+    {(status === 'ACTIVE' || status === 'CAUGHT') && (
+      <div
+        className="absolute inset-0 pointer-events-none transition-opacity duration-500 ease-in-out"
+        style={{
+          boxShadow: `inset 0 0 100px 50px rgba(220, 38, 38, ${hazardOpacity})`,
+          zIndex: 5
+        }}
+      />
+    )}
+
+    {/* Explicit Border for End States */}
+    {status === 'CAUGHT' && (
+      <div className="absolute inset-0 border-[20px] border-red-600/50 pointer-events-none animate-pulse z-10" />
+    )}
+    {status === 'EXTRACTED' && (
+      <div className="absolute inset-0 border-[20px] border-emerald-600/50 pointer-events-none z-10" />
+    )}
+  </div>
+);
 };
 
 export default GameMap;

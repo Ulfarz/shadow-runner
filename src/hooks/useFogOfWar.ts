@@ -4,7 +4,7 @@ import { useGameStore } from '../store/useGameStore';
 import { Feature, Polygon, MultiPolygon } from 'geojson';
 
 // Visibility radius in kilometers
-const VISIBILITY_RADIUS_KM = 0.05; // 50 meters
+const VISIBILITY_RADIUS_KM = 0.1; // 100 meters
 
 export const useFogOfWar = () => {
   const userPosition = useGameStore((state) => state.userPosition);

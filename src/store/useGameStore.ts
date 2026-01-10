@@ -46,6 +46,10 @@ export interface GameState {
   exploredPolygon: Feature<Polygon | MultiPolygon> | null;
   setExploredPolygon: (polygon: Feature<Polygon | MultiPolygon> | null) => void;
 
+  // Path History
+  pathHistory: number[][];
+  addToPathHistory: (point: number[]) => void;
+
   // Gamification State (Extraction Mode)
   gameStartTime: number | null;
   gameEndTime: number | null;
@@ -85,6 +89,7 @@ export interface GameState {
   centerOnPlayer: (() => void) | null;
   setCenterOnPlayer: (callback: (() => void) | null) => void;
 
+
   resetGame: () => void;
 }
 
@@ -100,6 +105,7 @@ export const useGameStore = create<GameState>((set) => ({
   targetDistance: 2.0,
   routeCoordinates: null,
   exploredPolygon: null,
+  pathHistory: [],
 
   // Gamification defaults
   gameStartTime: null,
@@ -123,6 +129,7 @@ export const useGameStore = create<GameState>((set) => ({
   setTargetDistance: (distance) => set({ targetDistance: distance }),
   setRouteCoordinates: (coords) => set({ routeCoordinates: coords }),
   setExploredPolygon: (polygon) => set({ exploredPolygon: polygon }),
+  addToPathHistory: (point) => set((state) => ({ pathHistory: [...state.pathHistory, point] })),
 
   // Gamification setters
   setGameStartTime: (time) => set({ gameStartTime: time }),
@@ -156,6 +163,7 @@ export const useGameStore = create<GameState>((set) => ({
     targetDistance: 2.0,
     routeCoordinates: null,
     exploredPolygon: null,
+    pathHistory: [],
     // Reset gamification
     gameStartTime: null,
     gameEndTime: null,

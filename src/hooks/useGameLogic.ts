@@ -66,7 +66,8 @@ export const useGameLogic = () => {
         updateBonusMission,
         setFinalRank,
         setCheckpoint,
-        setCheckpointReached
+        setCheckpointReached,
+        addToPathHistory
     } = useGameStore();
 
     const lastUpdateRef = useRef<number>(Date.now());
@@ -183,6 +184,13 @@ export const useGameLogic = () => {
             initGame();
         }
     }, [userPosition, status, gameMode, shadowPosition, targetDistance]);
+
+    // Track Path History
+    useEffect(() => {
+        if (status === 'ACTIVE' && userPosition) {
+            addToPathHistory([userPosition.longitude, userPosition.latitude]);
+        }
+    }, [userPosition, status, addToPathHistory]);
 
     // Game Loop (Shadow Movement & Win/Loss Check)
     useEffect(() => {
