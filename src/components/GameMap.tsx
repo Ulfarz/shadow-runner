@@ -14,28 +14,27 @@ if (mapboxgl.prewarm) mapboxgl.prewarm();
 // @ts-ignore
 mapboxgl.setTelemetryEnabled && mapboxgl.setTelemetryEnabled(false);
 
-// Helper to generate a simple arrow image
-const createArrowImage = (width: number, height: number): HTMLImageElement => {
+// Helper to generate a simple arrow image data (Synchronous)
+const createArrowData = (width: number, height: number): ImageData | null => {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext('2d');
-  if (ctx) {
-    ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#3b82f6';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(width / 2, 0); // Top
-    ctx.lineTo(width, height); // Bottom right
-    ctx.lineTo(width / 2, height * 0.7); // Inner bottom center
-    ctx.lineTo(0, height); // Bottom left
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-  }
-  const img = new Image();
-  img.src = canvas.toDataURL();
-  return img;
+  if (!ctx) return null;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#3b82f6';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(width / 2, 0); // Top
+  ctx.lineTo(width, height); // Bottom right
+  ctx.lineTo(width / 2, height * 0.75); // Inner bottom center
+  ctx.lineTo(0, height); // Bottom left
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  return ctx.getImageData(0, 0, width, height);
 };
 
 const GameMap: React.FC = () => {
@@ -148,15 +147,12 @@ const GameMap: React.FC = () => {
             });
           }
           
-          // --- Add Heading Arrow Image ---
+          // --- Add Heading Arrow Image (Synchronous) ---
           if (!map.current.hasImage('player-arrow')) {
-             const arrowImg = createArrowImage(48, 48);
-             arrowImg.onload = () => {
-                 if (!map.current) return;
-                 if (!map.current.hasImage('player-arrow')) {
-                    map.current.addImage('player-arrow', arrowImg);
-                 }
-             };
+             const arrowData = createArrowData(64, 64);
+             if (arrowData) {
+                map.current.addImage('player-arrow', arrowData);
+             }
           }
 
           // --- Route Source & Layer ---
