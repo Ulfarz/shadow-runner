@@ -41,6 +41,7 @@ const createArrowImage = (width: number, height: number): HTMLImageElement => {
 const GameMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const hasCentered = useRef(false);
 
   // Connect to store
   const { userPosition, extractionPoint, shadowPosition, status, exploredPolygon, routeCoordinates, pathHistory, checkpoint, checkpointReached, setCenterOnPlayer } = useGameStore();
@@ -59,6 +60,18 @@ const GameMap: React.FC = () => {
     return () => setCenterOnPlayer(null);
   }, [userPosition, setCenterOnPlayer]);
 
+  // Auto-center on player when position is first found
+  useEffect(() => {
+    if (map.current && userPosition && !hasCentered.current) {
+        map.current.flyTo({
+            center: [userPosition.longitude, userPosition.latitude],
+            zoom: 17,
+            duration: 2000 // Smooth fly to user
+        });
+        hasCentered.current = true;
+    }
+  }, [userPosition]);
+
   // Initialize Map
   useEffect(() => {
     if (map.current) return;
@@ -66,10 +79,21 @@ const GameMap: React.FC = () => {
     if (mapContainer.current) {
       try {
         console.log("Initializing GameMap with Mapbox...");
+        
+        // Check if we already have a position to start with
+        const initialPos = useGameStore.getState().userPosition;
+        const startCenter: [number, number] = initialPos 
+            ? [initialPos.longitude, initialPos.latitude] 
+            : [2.3522, 48.8566]; // Default Paris
+
+        if (initialPos) {
+            hasCentered.current = true;
+        }
+
         map.current = new mapboxgl.Map({
           container: mapContainer.current,
           style: 'mapbox://styles/mapbox/dark-v11', // Dark style for better gaming feel
-          center: [2.3522, 48.8566], // Default Paris
+          center: startCenter,
           zoom: 16, // Closer zoom for gameplay
           attributionControl: false, // Hide Mapbox attribution
           logoPosition: 'bottom-left', // Move logo to less intrusive position
