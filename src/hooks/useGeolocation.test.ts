@@ -11,7 +11,7 @@ describe('useGeolocation', () => {
     vi.clearAllMocks();
     
     // Reset store
-    useGameStore.setState({ userPosition: null });
+    useGameStore.setState({ userPosition: null, gpsError: null });
 
     // Mock geolocation
     if ('geolocation' in navigator) {
@@ -87,9 +87,9 @@ describe('useGeolocation', () => {
       return 1;
     });
 
-    const { result } = renderHook(() => useGeolocation());
+    renderHook(() => useGeolocation());
 
-    expect(result.current.error).toEqual(error);
+    expect(useGameStore.getState().gpsError).toEqual(error.message);
   });
 
   it('should clear watch on unmount', () => {
