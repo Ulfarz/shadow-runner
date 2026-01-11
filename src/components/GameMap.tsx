@@ -41,6 +41,7 @@ const GameMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const hasCentered = useRef(false);
+  const [isMapLoaded, setIsMapLoaded] = React.useState(false);
 
   // Connect to store
   const { userPosition, extractionPoint, shadowPosition, status, exploredPolygon, routeCoordinates, pathHistory, checkpoint, checkpointReached, setCenterOnPlayer } = useGameStore();
@@ -61,7 +62,7 @@ const GameMap: React.FC = () => {
 
   // Auto-center on player when position is first found
   useEffect(() => {
-    if (map.current && userPosition && !hasCentered.current) {
+    if (isMapLoaded && map.current && userPosition && !hasCentered.current) {
         map.current.flyTo({
             center: [userPosition.longitude, userPosition.latitude],
             zoom: 17,
@@ -69,7 +70,7 @@ const GameMap: React.FC = () => {
         });
         hasCentered.current = true;
     }
-  }, [userPosition]);
+  }, [userPosition, isMapLoaded]);
 
   // Initialize Map
   useEffect(() => {
@@ -365,6 +366,8 @@ const GameMap: React.FC = () => {
               'icon-opacity': ['case', ['==', ['get', 'heading'], null], 0, 1] // Hide if heading is null
             }
           });
+
+          setIsMapLoaded(true);
         });
       } catch (err) {
         console.error("Failed to initialize map:", err);
@@ -381,7 +384,7 @@ const GameMap: React.FC = () => {
 
   // Sync Fog of War
   useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+    if (!isMapLoaded || !map.current || !map.current.isStyleLoaded()) return;
 
     const source = map.current.getSource('fog') as mapboxgl.GeoJSONSource;
     if (source) {
@@ -399,11 +402,11 @@ const GameMap: React.FC = () => {
         source.setData(worldMask);
       }
     }
-  }, [exploredPolygon]);
+  }, [exploredPolygon, isMapLoaded]);
 
   // Sync Route
   useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+    if (!isMapLoaded || !map.current || !map.current.isStyleLoaded()) return;
 
     const source = map.current.getSource('route') as mapboxgl.GeoJSONSource;
     if (source) {
@@ -420,11 +423,11 @@ const GameMap: React.FC = () => {
         source.setData({ type: 'FeatureCollection', features: [] });
       }
     }
-  }, [routeCoordinates]);
+  }, [routeCoordinates, isMapLoaded]);
 
   // Sync Path History
   useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+    if (!isMapLoaded || !map.current || !map.current.isStyleLoaded()) return;
 
     const source = map.current.getSource('path-history') as mapboxgl.GeoJSONSource;
     if (source) {
@@ -441,11 +444,11 @@ const GameMap: React.FC = () => {
         source.setData({ type: 'FeatureCollection', features: [] });
       }
     }
-  }, [pathHistory]);
+  }, [pathHistory, isMapLoaded]);
 
   // Sync Extraction Point
   useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+    if (!isMapLoaded || !map.current || !map.current.isStyleLoaded()) return;
 
     const source = map.current.getSource('extraction') as mapboxgl.GeoJSONSource;
     if (source) {
@@ -462,11 +465,11 @@ const GameMap: React.FC = () => {
         source.setData({ type: 'FeatureCollection', features: [] });
       }
     }
-  }, [extractionPoint]);
+  }, [extractionPoint, isMapLoaded]);
 
   // Sync Checkpoint
   useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+    if (!isMapLoaded || !map.current || !map.current.isStyleLoaded()) return;
 
     const source = map.current.getSource('checkpoint') as mapboxgl.GeoJSONSource;
     if (source) {
@@ -483,11 +486,11 @@ const GameMap: React.FC = () => {
         source.setData({ type: 'FeatureCollection', features: [] });
       }
     }
-  }, [checkpoint, checkpointReached]);
+  }, [checkpoint, checkpointReached, isMapLoaded]);
 
   // Sync Shadow Position
   useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+    if (!isMapLoaded || !map.current || !map.current.isStyleLoaded()) return;
 
     const source = map.current.getSource('shadow') as mapboxgl.GeoJSONSource;
     if (source) {
@@ -504,11 +507,11 @@ const GameMap: React.FC = () => {
         source.setData({ type: 'FeatureCollection', features: [] });
       }
     }
-  }, [shadowPosition]);
+  }, [shadowPosition, isMapLoaded]);
 
   // Sync Player Position & Radius
   useEffect(() => {
-    if (!map.current || !map.current.isStyleLoaded()) return;
+    if (!isMapLoaded || !map.current || !map.current.isStyleLoaded()) return;
 
     const source = map.current.getSource('player') as mapboxgl.GeoJSONSource;
     if (source) {
@@ -539,7 +542,7 @@ const GameMap: React.FC = () => {
         source.setData({ type: 'FeatureCollection', features: [] });
       }
     }
-  }, [userPosition]);
+  }, [userPosition, isMapLoaded]);
 
   // Calculate hazard opacity based on distance (start showing at 500m, max at 20m)
   const getHazardOpacity = (shadowDistance: number | null) => {
