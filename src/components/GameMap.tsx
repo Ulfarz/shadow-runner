@@ -14,6 +14,30 @@ if (mapboxgl.prewarm) mapboxgl.prewarm();
 // @ts-ignore
 mapboxgl.setTelemetryEnabled && mapboxgl.setTelemetryEnabled(false);
 
+// Helper to generate a simple arrow image
+const createArrowImage = (width: number, height: number): HTMLImageElement => {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(width / 2, 0); // Top
+    ctx.lineTo(width, height); // Bottom right
+    ctx.lineTo(width / 2, height * 0.7); // Inner bottom center
+    ctx.lineTo(0, height); // Bottom left
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  const img = new Image();
+  img.src = canvas.toDataURL();
+  return img;
+};
+
 const GameMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
@@ -98,6 +122,17 @@ const GameMap: React.FC = () => {
                 }
               }
             });
+          }
+          
+          // --- Add Heading Arrow Image ---
+          if (!map.current.hasImage('player-arrow')) {
+             const arrowImg = createArrowImage(48, 48);
+             arrowImg.onload = () => {
+                 if (!map.current) return;
+                 if (!map.current.hasImage('player-arrow')) {
+                    map.current.addImage('player-arrow', arrowImg);
+                 }
+             };
           }
 
           // --- Route Source & Layer ---
@@ -291,6 +326,25 @@ const GameMap: React.FC = () => {
               'circle-stroke-color': '#ffffff'
             }
           });
+
+          // --- Player Heading Arrow Layer ---
+          map.current.addLayer({
+            id: 'player-heading',
+            type: 'symbol',
+            source: 'player',
+            filter: ['==', 'type', 'point'],
+            layout: {
+              'icon-image': 'player-arrow',
+              'icon-size': 0.5,
+              'icon-rotate': ['get', 'heading'],
+              'icon-rotation-alignment': 'map',
+              'icon-allow-overlap': true,
+              'icon-ignore-placement': true
+            },
+            paint: {
+              'icon-opacity': ['case', ['==', ['get', 'heading'], null], 0, 1] // Hide if heading is null
+            }
+          });
         });
       } catch (err) {
         console.error("Failed to initialize map:", err);
@@ -449,7 +503,10 @@ const GameMap: React.FC = () => {
             {
               type: 'Feature',
               geometry: point.geometry,
-              properties: { type: 'point' }
+              properties: { 
+                type: 'point',
+                heading: userPosition.heading 
+              }
             },
             {
               type: 'Feature',
