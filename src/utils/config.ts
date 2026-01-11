@@ -1,1 +1,1 @@
-export const MAPBOX_TOKEN = 'pk.eyJ1IjoidG9tZ3VlZ3VlbiIsImEiOiJjbWp4OHJ5eHozazR3M2NzZWZic2x6ZnZvIn0.VvmJM17B1Bn5VxTIs-tGFw';
+export const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;

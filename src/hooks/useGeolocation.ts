@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useGameStore } from '../store/useGameStore';
 
 interface GeolocationOptions {
@@ -9,20 +9,11 @@ interface GeolocationOptions {
 
 export const useGeolocation = (options: GeolocationOptions = { enableHighAccuracy: true }) => {
   const setUserPosition = useGameStore((state) => state.setUserPosition);
-  const [error, setError] = useState<GeolocationPositionError | null>(null);
+  const setGpsError = useGameStore((state) => state.setGpsError);
 
   useEffect(() => {
     if (!('geolocation' in navigator)) {
-      // Create a pseudo-error object since GeolocationPositionError constructor isn't directly exposed/standardized in all envs easily
-      const error: GeolocationPositionError = {
-        code: 0, // 0 is not a standard code, but indicates unknown/not supported
-        message: 'Geolocation not supported',
-        PERMISSION_DENIED: 1,
-        POSITION_UNAVAILABLE: 2,
-        TIMEOUT: 3,
-      } as unknown as GeolocationPositionError; // Force cast
-      
-      setError(error);
+      setGpsError('Geolocation not supported');
       return;
     }
 
@@ -36,10 +27,10 @@ export const useGeolocation = (options: GeolocationOptions = { enableHighAccurac
           speed: position.coords.speed,
           timestamp: position.timestamp,
         });
-        setError(null);
+        setGpsError(null);
       },
       (err) => {
-        setError(err);
+        setGpsError(err.message);
       },
       options
     );
@@ -47,7 +38,5 @@ export const useGeolocation = (options: GeolocationOptions = { enableHighAccurac
     return () => {
       navigator.geolocation.clearWatch(successId);
     };
-  }, [setUserPosition, options.enableHighAccuracy, options.timeout, options.maximumAge]);
-
-  return { error };
+  }, [setUserPosition, setGpsError, options.enableHighAccuracy, options.timeout, options.maximumAge]);
 };

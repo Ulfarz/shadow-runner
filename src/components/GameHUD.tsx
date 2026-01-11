@@ -42,22 +42,19 @@ export const GameHUD: React.FC = () => {
 
     return (
         <div className="fixed inset-x-0 top-0 bottom-0 pointer-events-none z-50 flex flex-col">
-            {/* TOP BAR - Timer + Distance */}
-            <div className="flex justify-between items-center p-3 pt-[max(12px,env(safe-area-inset-top))]">
-                {/* Timer */}
-                {gameMode === 'EXTRACTION' && (
-                    <div className="flex items-center gap-2 bg-black/80 px-3 py-2 rounded-full">
-                        <Clock size={16} className="text-amber-400" />
-                        <span className="font-mono text-white text-lg font-bold tabular-nums">
-                            {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
-                        </span>
-                    </div>
-                )}
-                {gameMode !== 'EXTRACTION' && <div />}
+            {/* TOP BAR - Timer + Distance (Moved to top-right to avoid logo overlap) */}
+            <div className="flex flex-col items-end gap-2 p-3 pt-[max(12px,env(safe-area-inset-top))]">
+                {/* Timer (Visible in all active modes) */}
+                <div className="flex items-center gap-2 bg-black/80 px-3 py-2 rounded-full border border-white/10">
+                    <Clock size={16} className="text-amber-400" />
+                    <span className="font-mono text-white text-lg font-bold tabular-nums">
+                        {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
+                    </span>
+                </div>
 
-                {/* Distance to extraction */}
+                {/* Distance to extraction (Extraction mode only) */}
                 {gameMode === 'EXTRACTION' && distanceToExtraction && (
-                    <div className="flex items-center gap-2 bg-emerald-900/80 px-3 py-2 rounded-full">
+                    <div className="flex items-center gap-2 bg-emerald-900/80 px-3 py-2 rounded-full border border-emerald-400/20">
                         <Target size={16} className="text-emerald-400" />
                         <span className="font-mono text-emerald-300 text-lg font-bold tabular-nums">
                             {distanceToExtraction > 1000
