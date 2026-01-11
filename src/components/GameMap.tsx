@@ -565,7 +565,7 @@ const GameMap: React.FC = () => {
   const hazardOpacity = useGameStore((state) => getHazardOpacity(state.shadowDistance));
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-slate-950">
+    <div className="relative w-full h-[100dvh] overflow-hidden bg-slate-950">
       <div ref={mapContainer} className="absolute inset-0" style={{ width: '100%', height: '100%' }} />
 
       {/* Title */}

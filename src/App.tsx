@@ -17,7 +17,7 @@ function App() {
   useFogOfWar();
 
   return (
-    <main className="w-full h-screen relative bg-slate-950">
+    <main className="w-full h-[100dvh] relative bg-slate-950 overflow-hidden">
       {status === 'IDLE' && <MainMenu />}
       <GameMap />
       <GameHUD />
