@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1040528208090",
+    "project_id": "shadow-runner-4fc5c",
+    "storage_bucket": "shadow-runner-4fc5c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1040528208090:android:95078c8922bbb80b1575e3",
+        "android_client_info": {
+          "package_name": "com.shadowrunner.game"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpHKYG83oVYwc3guyjI9boKGXqEHlNQYY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
