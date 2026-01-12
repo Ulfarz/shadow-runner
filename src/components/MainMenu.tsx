@@ -239,7 +239,7 @@ export const MainMenu: React.FC = () => {
                         Shadow <span className="text-red-600">Runner</span>
                     </h1>
                     <p className="text-slate-400 font-mono text-[10px] sm:text-xs tracking-widest uppercase italic">
-                        // Tactical Urban Infiltration Protocol
+                        // Outrun The Shadow
                     </p>
                 </div>
 
