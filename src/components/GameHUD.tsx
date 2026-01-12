@@ -1,8 +1,10 @@
 import React from 'react';
 import { useGameStore } from '../store/useGameStore';
 import { Clock, Ghost, MapPin, Zap, Target, Crosshair } from 'lucide-react';
+import { useTranslation } from 'react-i18next'; // Import pour la traduction
 
 export const GameHUD: React.FC = () => {
+    const { t } = useTranslation(); // Initialisation du hook de traduction
     const userPosition = useGameStore((state) => state.userPosition);
     const gameMode = useGameStore((state) => state.gameMode);
     const gameStartTime = useGameStore((state) => state.gameStartTime);
@@ -42,9 +44,9 @@ export const GameHUD: React.FC = () => {
 
     return (
         <div className="fixed inset-x-0 top-0 bottom-0 pointer-events-none z-50 flex flex-col">
-            {/* TOP BAR - Timer + Distance (Moved to top-right to avoid logo overlap) */}
+            {/* TOP BAR - Timer + Distance */}
             <div className="flex flex-col items-end gap-2 p-3 pt-[max(12px,env(safe-area-inset-top))]">
-                {/* Timer (Visible in all active modes) */}
+                {/* Timer */}
                 <div className="flex items-center gap-2 bg-black/80 px-3 py-2 rounded-full border border-white/10">
                     <Clock size={16} className="text-amber-400" />
                     <span className="font-mono text-white text-lg font-bold tabular-nums">
@@ -52,7 +54,7 @@ export const GameHUD: React.FC = () => {
                     </span>
                 </div>
 
-                {/* Distance to extraction (Extraction mode only) */}
+                {/* Distance to extraction */}
                 {gameMode === 'EXTRACTION' && distanceToExtraction && (
                     <div className="flex items-center gap-2 bg-emerald-900/80 px-3 py-2 rounded-full border border-emerald-400/20">
                         <Target size={16} className="text-emerald-400" />
@@ -65,7 +67,7 @@ export const GameHUD: React.FC = () => {
                 )}
             </div>
 
-            {/* LEFT SIDE - Objectives (only in extraction mode) */}
+            {/* LEFT SIDE - Objectives */}
             {gameMode === 'EXTRACTION' && (
                 <div className="absolute left-3 top-20 flex flex-col gap-2">
                     {/* Checkpoint */}
@@ -74,7 +76,7 @@ export const GameHUD: React.FC = () => {
                         : 'bg-black/70 text-amber-400'
                         }`}>
                         <MapPin size={12} />
-                        <span>{checkpointReached ? '✓' : '○'} CP</span>
+                        <span>{checkpointReached ? '✓' : '○'} {t('hud.checkpoint_abbr')}</span>
                     </div>
 
                     {/* Speed Challenge */}
@@ -92,7 +94,7 @@ export const GameHUD: React.FC = () => {
                     {speedMission?.completed && (
                         <div className="flex items-center gap-2 bg-emerald-500/90 px-2.5 py-1.5 rounded-full text-xs font-mono font-bold text-white">
                             <Zap size={12} />
-                            <span>✓ SPD</span>
+                            <span>✓ {t('hud.speed_abbr')}</span>
                         </div>
                     )}
 
@@ -112,13 +114,13 @@ export const GameHUD: React.FC = () => {
                     <div className="bg-black/80 backdrop-blur-sm rounded-2xl px-6 py-3 flex items-center gap-4">
                         <div className="text-center">
                             <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wide mb-0.5">
-                                YOUR SPEED
+                                {t('hud.your_speed')}
                             </div>
                             <div className="flex items-baseline justify-center gap-1">
                                 <span className="text-3xl font-black text-white font-mono tabular-nums">
                                     {formatSpeed(userPosition?.speed || 0)}
                                 </span>
-                                <span className="text-xs text-slate-500 font-bold">km/h</span>
+                                <span className="text-xs text-slate-500 font-bold">{t('hud.kmh')}</span>
                             </div>
                         </div>
 
@@ -127,13 +129,13 @@ export const GameHUD: React.FC = () => {
                                 <div className="w-px h-10 bg-slate-700" />
                                 <div className="text-center">
                                     <div className="text-red-400 text-[10px] font-bold uppercase tracking-wide mb-0.5">
-                                        SHADOW
+                                        {t('hud.shadow')}
                                     </div>
                                     <div className="flex items-baseline justify-center gap-1">
                                         <span className="text-3xl font-black text-red-400 font-mono tabular-nums">
                                             {currentShadowSpeed.toFixed(0)}
                                         </span>
-                                        <span className="text-xs text-slate-500 font-bold">km/h</span>
+                                        <span className="text-xs text-slate-500 font-bold">{t('hud.kmh')}</span>
                                     </div>
                                 </div>
                             </>
@@ -144,7 +146,7 @@ export const GameHUD: React.FC = () => {
                     <button
                         onClick={() => centerOnPlayer?.()}
                         className="pointer-events-auto bg-black/80 backdrop-blur-sm rounded-full p-3 active:bg-slate-700 transition-colors"
-                        aria-label="Center on player"
+                        aria-label={t('hud.center_on_player')}
                     >
                         <Crosshair size={24} className="text-white" />
                     </button>

@@ -1,0 +1,23 @@
+{
+    "home": {
+        "title": "Shadow Runner",
+        "subtitle": "Tactical Infiltration Protocol",
+        "btn_extraction": "Extraction",
+        "desc_extraction": "Reach extraction point. Outrun the shadow.",
+        "btn_survival": "Survival",
+        "desc_survival": "No destination. Run for your life.",
+        "start": "START",
+        "mode_select": "Movement Mode",
+        "walk": "WALK (5km/h)",
+        "run": "RUN (15km/h)"
+    },
+    "hud": {
+        "speed": "SPEED",
+        "shadow": "SHADOW",
+        "distance": "DISTANCE"
+    },
+    "auth": {
+        "login_google": "GOOGLE LOGIN",
+        "welcome": "Welcome"
+    }
+}

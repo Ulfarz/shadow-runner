@@ -1,0 +1,23 @@
+{
+    "home": {
+        "title": "Shadow Runner",
+        "subtitle": "Protocole d'Infiltration Tactique",
+        "btn_extraction": "Extraction",
+        "desc_extraction": "Atteignez le point d'extraction. Fuyez l'ombre.",
+        "btn_survival": "Survie",
+        "desc_survival": "Aucune destination. Courez pour votre vie.",
+        "start": "COMMENCER",
+        "mode_select": "Mode de déplacement",
+        "walk": "MARCHE (5km/h)",
+        "run": "COURSE (15km/h)"
+    },
+    "hud": {
+        "speed": "VITESSE",
+        "shadow": "OMBRE",
+        "distance": "DISTANCE"
+    },
+    "auth": {
+        "login_google": "CONNEXION GOOGLE",
+        "welcome": "Bienvenue"
+    }
+}
