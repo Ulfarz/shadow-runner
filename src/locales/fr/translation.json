@@ -11,6 +11,35 @@
         "walk": "MARCHE (5km/h)",
         "run": "COURSE (15km/h)"
     },
+    "menu": {
+        "briefing_protocol": "Protocole d'Initiation",
+        "concept_title": "Concept Fondamental",
+        "concept_desc": "Shadow Runner est un jeu de géolocalisation tactique. Vous devez vous déplacer physiquement dans le monde réel pour avancer. La carte est recouverte d'un 'Brouillard de Guerre' qui ne se dissipe que là où vous marchez.",
+        "extraction_title": "Extraction",
+        "extraction_desc": "Atteignez le point d'extraction généré aléatoirement. Validez les Checkpoints et complétez les défis pour améliorer votre rang.",
+        "survival_title": "Survie",
+        "survival_desc": "Aucune destination. L'Ombre accélère continuellement. Survivez le plus longtemps possible.",
+        "hud_title": "Interface Tactique (HUD)",
+        "hud_timer": "Chronomètre de mission",
+        "hud_target": "Distance cible",
+        "hud_challenge": "Défi de vitesse (>8km/h)",
+        "hud_shadow": "Vitesse de l'Ombre",
+        "warning_title": "Avertissement de Sécurité",
+        "warning_desc": "Restez toujours attentif à votre environnement réel. Ne jouez pas près des routes dangereuses. Shadow Runner n'est qu'une simulation. Votre sécurité réelle est prioritaire.",
+        "btn_understand": "Compris // Initialiser",
+        "btn_briefing": "Consulter le Briefing",
+        "gps_locked": "SIGNAL GPS VERROUILLÉ",
+        "gps_activate": "ACTIVEZ LA LOCALISATION GPS"
+    },
+    "config": {
+        "mission_config": "Config Mission",
+        "survival_config": "Config Survie",
+        "target_distance": "Distance cible",
+        "ref_distance": "Distance Réf.",
+        "estimated": "Estimé",
+        "back": "RETOUR",
+        "start": "LANCER"
+    },
     "hud": {
         "speed": "VITESSE",
         "shadow": "OMBRE",
@@ -20,6 +49,19 @@
         "your_speed": "VOTRE VITESSE",
         "kmh": "km/h",
         "center_on_player": "Centrer sur le joueur"
+    },
+    "endgame": {
+        "success": "EXTRACTION RÉUSSIE",
+        "fail": "VOUS AVEZ ÉTÉ CAPTURÉ",
+        "legendary": "LÉGENDAIRE",
+        "excellent": "EXCELLENT",
+        "great": "SUPERBE",
+        "acceptable": "ACCEPTABLE",
+        "completed": "COMPLÉTÉ",
+        "failed": "ÉCHEC DE MISSION",
+        "time": "TEMPS",
+        "bonus": "Objectifs Bonus",
+        "return": "Retour au Menu"
     },
     "auth": {
         "login_google": "CONNEXION GOOGLE",

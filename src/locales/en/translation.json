@@ -11,6 +11,35 @@
         "walk": "WALK (5km/h)",
         "run": "RUN (15km/h)"
     },
+    "menu": {
+        "briefing_protocol": "Initiation Protocol",
+        "concept_title": "Core Concept",
+        "concept_desc": "Shadow Runner is a tactical geolocation game. You must physically move in the real world to progress. The map is covered in a 'Fog of War' that only lifts where you walk.",
+        "extraction_title": "Extraction",
+        "extraction_desc": "Reach the randomly generated extraction point. Clear Checkpoints and complete challenges to improve your rank.",
+        "survival_title": "Survival",
+        "survival_desc": "No destination. Base shadow speed increases over time. Survive as long as possible.",
+        "hud_title": "Tactical Interface (HUD)",
+        "hud_timer": "Mission Timer",
+        "hud_target": "Target Distance",
+        "hud_challenge": "Speed Challenge (>8km/h)",
+        "hud_shadow": "Shadow Speed",
+        "warning_title": "Security Warning",
+        "warning_desc": "Always stay aware of your real surroundings. Do not play near dangerous roads. Shadow Runner is just a simulation. Your real safety is priority.",
+        "btn_understand": "Understood // Initialize",
+        "btn_briefing": "Open Briefing",
+        "gps_locked": "GPS SIGNAL LOCKED",
+        "gps_activate": "ACTIVATE GPS LOCATION"
+    },
+    "config": {
+        "mission_config": "Mission Config",
+        "survival_config": "Survival Config",
+        "target_distance": "Target Distance",
+        "ref_distance": "Reference Distance",
+        "estimated": "Estimated",
+        "back": "BACK",
+        "start": "START"
+    },
     "hud": {
         "speed": "SPEED",
         "shadow": "SHADOW",
@@ -20,6 +49,19 @@
         "your_speed": "YOUR SPEED",
         "kmh": "km/h",
         "center_on_player": "Center on player"
+    },
+    "endgame": {
+        "success": "EXTRACTION COMPLETE",
+        "fail": "YOU WERE CAUGHT",
+        "legendary": "LEGENDARY",
+        "excellent": "EXCELLENT",
+        "great": "GREAT",
+        "acceptable": "ACCEPTABLE",
+        "completed": "COMPLETED",
+        "failed": "MISSION FAILED",
+        "time": "TIME",
+        "bonus": "Bonus Objectives",
+        "return": "Return to Menu"
     },
     "auth": {
         "login_google": "GOOGLE LOGIN",

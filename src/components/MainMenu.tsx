@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { useGameStore, GameMode } from '../store/useGameStore';
-import { Target, ShieldAlert, Play, Map as MapIcon, ChevronLeft, Info, X, Footprints, Ghost, Zap, Clock, FileText, AlertTriangle } from 'lucide-react';
+import { Target, ShieldAlert, Play, Map as MapIcon, ChevronLeft, Info, X, Footprints, Ghost, Zap, Clock, FileText, AlertTriangle, Globe } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export const MainMenu: React.FC = () => {
     const { setGameMode, setStatus, targetDistance, setTargetDistance, userPosition, gpsError } = useGameStore();
     const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
     const [inputValue, setInputValue] = useState(targetDistance.toString());
     const [showNotice, setShowNotice] = useState(false);
+    const { t, i18n } = useTranslation();
 
     const handleSelectMode = (mode: GameMode) => {
         setSelectedMode(mode);
@@ -35,6 +37,11 @@ export const MainMenu: React.FC = () => {
         }
     };
 
+    const toggleLanguage = () => {
+        const newLang = i18n.language === 'en' ? 'fr' : 'en';
+        i18n.changeLanguage(newLang);
+    };
+
     // Notice Modal
     const NoticeModal = () => (
         <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4 animate-in fade-in duration-200">
@@ -44,10 +51,10 @@ export const MainMenu: React.FC = () => {
                     <div className="flex items-center gap-3">
                         <Info className="text-cyan-400" size={24} />
                         <h2 className="text-xl font-black uppercase tracking-wider text-white">
-                            Protocole <span className="text-cyan-400">d'Initiation</span>
+                            <span className="text-cyan-400">{t('menu.briefing_protocol')}</span>
                         </h2>
                     </div>
-                    <button 
+                    <button
                         onClick={() => setShowNotice(false)}
                         className="p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white"
                     >
@@ -57,16 +64,14 @@ export const MainMenu: React.FC = () => {
 
                 {/* Content */}
                 <div className="overflow-y-auto p-5 space-y-6 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent">
-                    
+
                     {/* Concept */}
                     <div className="bg-slate-950/50 rounded-xl p-4 border border-slate-800">
                         <h3 className="flex items-center gap-2 text-sm font-bold uppercase text-slate-400 mb-3 tracking-wide">
-                            <Footprints size={16} /> Concept Fondamental
+                            <Footprints size={16} /> {t('menu.concept_title')}
                         </h3>
                         <p className="text-slate-300 leading-relaxed text-sm">
-                            Shadow Runner est un jeu de <strong className="text-white">géolocalisation tactique</strong>. 
-                            Vous devez vous déplacer physiquement dans le monde réel pour avancer dans le jeu.
-                            La carte est recouverte d'un "Brouillard de Guerre" qui ne se dissipe que là où vous marchez.
+                            {t('menu.concept_desc')}
                         </p>
                     </div>
 
@@ -77,11 +82,10 @@ export const MainMenu: React.FC = () => {
                                 <Target size={64} className="text-emerald-500" />
                             </div>
                             <h3 className="text-emerald-400 font-bold uppercase mb-2 flex items-center gap-2">
-                                <MapIcon size={16} /> Extraction
+                                <MapIcon size={16} /> {t('menu.extraction_title')}
                             </h3>
                             <p className="text-slate-400 text-xs leading-relaxed">
-                                Atteignez le point d'extraction généré aléatoirement. 
-                                Validez les <span className="text-emerald-300">Checkpoints</span> et complétez les défis pour améliorer votre rang.
+                                {t('menu.extraction_desc')}
                             </p>
                         </div>
 
@@ -90,11 +94,10 @@ export const MainMenu: React.FC = () => {
                                 <Ghost size={64} className="text-red-500" />
                             </div>
                             <h3 className="text-red-400 font-bold uppercase mb-2 flex items-center gap-2">
-                                <ShieldAlert size={16} /> Survie
+                                <ShieldAlert size={16} /> {t('menu.survival_title')}
                             </h3>
                             <p className="text-slate-400 text-xs leading-relaxed">
-                                Aucune destination. Courez pour votre vie. L'Ombre accélère continuellement.
-                                Survivez le plus longtemps possible.
+                                {t('menu.survival_desc')}
                             </p>
                         </div>
                     </div>
@@ -102,24 +105,24 @@ export const MainMenu: React.FC = () => {
                     {/* HUD Guide */}
                     <div className="space-y-3">
                         <h3 className="text-sm font-bold uppercase text-slate-400 tracking-wide border-b border-slate-800 pb-2">
-                            Interface Tactique (HUD)
+                            {t('menu.hud_title')}
                         </h3>
                         <div className="grid grid-cols-2 gap-3 text-xs">
                             <div className="flex items-center gap-3 bg-slate-800/50 p-2 rounded-lg">
                                 <div className="bg-amber-500/10 p-1.5 rounded text-amber-400"><Clock size={14} /></div>
-                                <span className="text-slate-300">Chronomètre de mission</span>
+                                <span className="text-slate-300">{t('menu.hud_timer')}</span>
                             </div>
                             <div className="flex items-center gap-3 bg-slate-800/50 p-2 rounded-lg">
                                 <div className="bg-emerald-500/10 p-1.5 rounded text-emerald-400"><Target size={14} /></div>
-                                <span className="text-slate-300">Distance cible</span>
+                                <span className="text-slate-300">{t('menu.hud_target')}</span>
                             </div>
                             <div className="flex items-center gap-3 bg-slate-800/50 p-2 rounded-lg">
                                 <div className="bg-purple-500/10 p-1.5 rounded text-purple-400"><Zap size={14} /></div>
-                                <span className="text-slate-300">Défi de vitesse (&gt;8km/h)</span>
+                                <span className="text-slate-300">{t('menu.hud_challenge')}</span>
                             </div>
                             <div className="flex items-center gap-3 bg-slate-800/50 p-2 rounded-lg">
                                 <div className="bg-red-500/10 p-1.5 rounded text-red-400"><Ghost size={14} /></div>
-                                <span className="text-slate-300">Vitesse de l'Ombre</span>
+                                <span className="text-slate-300">{t('menu.hud_shadow')}</span>
                             </div>
                         </div>
                     </div>
@@ -128,10 +131,9 @@ export const MainMenu: React.FC = () => {
                     <div className="bg-red-950/20 border border-red-900/50 p-4 rounded-xl flex gap-3 items-start">
                         <ShieldAlert className="text-red-500 shrink-0 mt-0.5" size={20} />
                         <div>
-                            <h4 className="text-red-400 font-bold text-sm uppercase mb-1">Avertissement de Sécurité</h4>
+                            <h4 className="text-red-400 font-bold text-sm uppercase mb-1">{t('menu.warning_title')}</h4>
                             <p className="text-red-200/60 text-xs">
-                                Restez toujours attentif à votre environnement réel. Ne jouez pas près des routes dangereuses.
-                                Shadow Runner n'est qu'une simulation. Votre sécurité réelle est prioritaire.
+                                {t('menu.warning_desc')}
                             </p>
                         </div>
                     </div>
@@ -139,11 +141,11 @@ export const MainMenu: React.FC = () => {
 
                 {/* Footer Action */}
                 <div className="p-5 border-t border-slate-800 bg-slate-900/50">
-                    <button 
+                    <button
                         onClick={() => setShowNotice(false)}
                         className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(8,145,178,0.4)] uppercase tracking-wide text-sm"
                     >
-                        Compris // Initialiser
+                        {t('menu.btn_understand')}
                     </button>
                 </div>
             </div>
@@ -162,7 +164,7 @@ export const MainMenu: React.FC = () => {
                             <ShieldAlert size={48} className="text-red-500 mx-auto mb-3 sm:w-16 sm:h-16" />
                         )}
                         <h2 className={`text-2xl sm:text-3xl font-black uppercase tracking-tighter ${selectedMode === 'EXTRACTION' ? 'text-white' : 'text-red-500'}`}>
-                            {selectedMode === 'EXTRACTION' ? 'Mission Config' : 'Survival Config'}
+                            {selectedMode === 'EXTRACTION' ? t('config.mission_config') : t('config.survival_config')}
                         </h2>
                         <p className="text-slate-400 font-mono text-xs sm:text-sm mt-1">
                             {selectedMode === 'EXTRACTION' ? 'SET_EXTRACTION_PARAMETERS' : 'SET_SURVIVAL_PARAMETERS'}
@@ -171,7 +173,7 @@ export const MainMenu: React.FC = () => {
 
                     <div className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6">
                         <label className={`block font-bold font-mono text-xs uppercase mb-2 ${selectedMode === 'EXTRACTION' ? 'text-emerald-400' : 'text-red-400'}`}>
-                            {selectedMode === 'EXTRACTION' ? 'Target Distance' : 'Reference Distance'} (km)
+                            {selectedMode === 'EXTRACTION' ? t('config.target_distance') : t('config.ref_distance')} (km)
                         </label>
                         <div className="flex items-center gap-3">
                             <input
@@ -186,7 +188,7 @@ export const MainMenu: React.FC = () => {
                             <span className="text-slate-500 font-mono font-bold text-sm">KM</span>
                         </div>
                         <p className="text-slate-500 text-xs mt-2">
-                            Estimated: {Math.round((parseFloat(inputValue) || 0) * 10)}-{Math.round((parseFloat(inputValue) || 0) * 15)} min
+                            {t('config.estimated')}: {Math.round((parseFloat(inputValue) || 0) * 10)}-{Math.round((parseFloat(inputValue) || 0) * 15)} min
                         </p>
                     </div>
 
@@ -196,7 +198,7 @@ export const MainMenu: React.FC = () => {
                             className="flex-1 py-3 sm:py-4 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-sm sm:text-base"
                         >
                             <ChevronLeft size={18} />
-                            BACK
+                            {t('config.back')}
                         </button>
                         <button
                             onClick={handleStartGame}
@@ -206,7 +208,7 @@ export const MainMenu: React.FC = () => {
                                 }`}
                         >
                             <Play size={18} fill="currentColor" />
-                            {selectedMode === 'EXTRACTION' ? 'Start' : 'Start'}
+                            {t('config.start')}
                         </button>
                     </div>
                 </div>
@@ -218,8 +220,19 @@ export const MainMenu: React.FC = () => {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-md overflow-y-auto p-4">
             {showNotice && <NoticeModal />}
-            
+
             <div className="max-w-lg w-full flex flex-col items-center py-6 relative">
+                {/* Language Switcher */}
+                <button
+                    onClick={toggleLanguage}
+                    className="absolute top-0 right-0 p-2 text-slate-500 hover:text-white transition-colors"
+                >
+                    <div className="flex items-center gap-1 text-xs font-mono font-bold">
+                        <Globe size={14} />
+                        <span>{i18n.language.toUpperCase()}</span>
+                    </div>
+                </button>
+
                 {/* Logo / Header */}
                 <div className="mb-6 sm:mb-10 text-center w-full">
                     <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tighter uppercase mb-1 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]">
@@ -242,10 +255,10 @@ export const MainMenu: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                             <h2 className="text-lg sm:text-xl font-bold text-white mb-1 group-hover:text-emerald-300 transition-colors uppercase">
-                                Extraction
+                                {t('menu.extraction_title')}
                             </h2>
                             <p className="text-slate-400 text-xs sm:text-sm line-clamp-2">
-                                Reach the extraction point. Outrun the shadow.
+                                {t('menu.extraction_desc')}
                             </p>
                         </div>
                         <Play size={20} className="text-emerald-500 opacity-50 group-hover:opacity-100 shrink-0" fill="currentColor" />
@@ -261,10 +274,10 @@ export const MainMenu: React.FC = () => {
                         </div>
                         <div className="flex-1 min-w-0">
                             <h2 className="text-lg sm:text-xl font-bold text-white mb-1 group-hover:text-red-300 transition-colors uppercase">
-                                Survival
+                                {t('menu.survival_title')}
                             </h2>
                             <p className="text-slate-400 text-xs sm:text-sm line-clamp-2">
-                                No destination. The shadow grows faster over time.
+                                {t('menu.survival_desc')}
                             </p>
                         </div>
                         <Play size={20} className="text-red-500 opacity-50 group-hover:opacity-100 shrink-0" fill="currentColor" />
@@ -273,12 +286,12 @@ export const MainMenu: React.FC = () => {
 
                 {/* Footer / Briefing Action */}
                 <div className="flex flex-col items-center gap-4 w-full">
-                    <button 
+                    <button
                         onClick={() => setShowNotice(true)}
                         className="flex items-center gap-3 px-8 py-2.5 text-xs font-mono font-bold text-cyan-400 bg-cyan-950/20 border-x border-slate-800 hover:border-cyan-500/50 hover:bg-cyan-900/20 transition-all tracking-[0.3em] uppercase group"
                     >
                         <FileText size={16} className="group-hover:animate-pulse" />
-                        Consulter le Briefing
+                        {t('menu.btn_briefing')}
                     </button>
 
                     {/* GPS Status Indicator */}
@@ -286,12 +299,12 @@ export const MainMenu: React.FC = () => {
                         {userPosition && !gpsError ? (
                             <div className="flex items-center gap-2 text-emerald-500/50 text-[10px] font-mono tracking-widest uppercase">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_#10b981] animate-pulse" />
-                                GPS SIGNAL LOCKED
+                                {t('menu.gps_locked')}
                             </div>
                         ) : (
                             <div className="flex items-center gap-2 text-red-500 text-[10px] font-mono font-bold tracking-wide animate-pulse">
                                 <AlertTriangle size={12} />
-                                <span>ACTIVATE GPS LOCATION</span>
+                                <span>{t('menu.gps_activate')}</span>
                             </div>
                         )}
                     </div>
