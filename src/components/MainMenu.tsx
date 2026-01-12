@@ -1,14 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useGameStore, GameMode } from '../store/useGameStore';
-import { Target, ShieldAlert, Play, Map as MapIcon, ChevronLeft, Info, X, Footprints, Ghost, Zap, Clock, FileText, AlertTriangle, Globe } from 'lucide-react';
+import { Target, ShieldAlert, Play, Map as MapIcon, ChevronLeft, Info, X, Footprints, Ghost, Zap, Clock, FileText, AlertTriangle, Globe, LogOut } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { authService } from '../services/authService';
+import { supabase } from '../services/supabase';
+import { User } from '@supabase/supabase-js';
 
 export const MainMenu: React.FC = () => {
     const { setGameMode, setStatus, targetDistance, setTargetDistance, userPosition, gpsError } = useGameStore();
     const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
     const [inputValue, setInputValue] = useState(targetDistance.toString());
     const [showNotice, setShowNotice] = useState(false);
+    const [user, setUser] = useState<User | null>(null);
     const { t, i18n } = useTranslation();
+
+    useEffect(() => {
+        // Get initial user
+        authService.getCurrentUser().then(setUser);
+
+        // Listen for auth changes
+        const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+        });
+
+        return () => {
+            authListener.subscription.unsubscribe();
+        };
+    }, []);
+
+    const handleGoogleLogin = async () => {
+        try {
+            await authService.loginWithGoogle();
+        } catch (error: any) {
+            alert("Erreur connexion : " + error.message);
+        }
+    };
+
+    const handleLogout = async () => {
+        try {
+            await authService.signOut();
+        } catch (error: any) {
+            alert("Erreur déconnexion : " + error.message);
+        }
+    };
 
     const handleSelectMode = (mode: GameMode) => {
         setSelectedMode(mode);
@@ -286,6 +320,33 @@ export const MainMenu: React.FC = () => {
 
                 {/* Footer / Briefing Action */}
                 <div className="flex flex-col items-center gap-4 w-full">
+                    {/* Auth Section */}
+                    {user ? (
+                        <div className="flex flex-col items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 bg-slate-900/50 border border-emerald-500/20 px-4 py-2 rounded-lg">
+                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_#10b981]" />
+                                <span className="text-white text-xs font-mono">
+                                    {t('auth.welcome')}, <span className="text-emerald-400 font-bold">{user.user_metadata.full_name || user.email}</span>
+                                </span>
+                                <button
+                                    onClick={handleLogout}
+                                    className="ml-2 p-1 text-slate-500 hover:text-red-400 transition-colors"
+                                    title="Logout"
+                                >
+                                    <LogOut size={14} />
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={handleGoogleLogin}
+                            className="flex items-center gap-3 px-8 py-2.5 text-xs font-mono font-bold text-white bg-blue-600 hover:bg-blue-500 border border-slate-700 hover:border-blue-400 transition-all tracking-[0.2em] uppercase rounded-xl mb-4 group"
+                        >
+                            <Globe size={16} className="group-hover:rotate-12 transition-transform" />
+                            {t('auth.login_google')}
+                        </button>
+                    )}
+
                     <button
                         onClick={() => setShowNotice(true)}
                         className="flex items-center gap-3 px-8 py-2.5 text-xs font-mono font-bold text-cyan-400 bg-cyan-950/20 border-x border-slate-800 hover:border-cyan-500/50 hover:bg-cyan-900/20 transition-all tracking-[0.3em] uppercase group"

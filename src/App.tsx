@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+import { authService } from './services/authService'
 import GameMap from './components/GameMap'
 import { GameHUD } from './components/GameHUD'
 import { MainMenu } from './components/MainMenu'
@@ -17,6 +19,11 @@ function App() {
   useGeolocation();
   useGameLogic();
   useFogOfWar();
+
+  // Initialize Auth Service
+  useEffect(() => {
+    authService.initialize();
+  }, []);
 
   return (
     <main className="w-full h-[100dvh] relative bg-slate-950 overflow-hidden">
