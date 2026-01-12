@@ -14,7 +14,12 @@
     "hud": {
         "speed": "SPEED",
         "shadow": "SHADOW",
-        "distance": "DISTANCE"
+        "distance": "DISTANCE",
+        "checkpoint_abbr": "CP",
+        "speed_abbr": "SPD",
+        "your_speed": "YOUR SPEED",
+        "kmh": "km/h",
+        "center_on_player": "Center on player"
     },
     "auth": {
         "login_google": "GOOGLE LOGIN",

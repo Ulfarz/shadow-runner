@@ -14,7 +14,12 @@
     "hud": {
         "speed": "VITESSE",
         "shadow": "OMBRE",
-        "distance": "DISTANCE"
+        "distance": "DISTANCE",
+        "checkpoint_abbr": "PC",
+        "speed_abbr": "VIT",
+        "your_speed": "VOTRE VITESSE",
+        "kmh": "km/h",
+        "center_on_player": "Centrer sur le joueur"
     },
     "auth": {
         "login_google": "CONNEXION GOOGLE",
