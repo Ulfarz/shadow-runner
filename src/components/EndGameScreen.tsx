@@ -1,34 +1,24 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useGameStore } from '../store/useGameStore';
 import { Trophy, Clock, CheckCircle, XCircle, RotateCcw, Zap, MapPin, Timer } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { statsService } from '../services/statsService';
 
 export const EndGameScreen: React.FC = () => {
-    const { status, finalRank, gameStartTime, gameEndTime, bonusMissions, resetGame, gameMode } = useGameStore();
+    const {
+        status,
+        finalRank,
+        gameStartTime,
+        gameEndTime,
+        bonusMissions,
+        resetGame,
+        gameMode,
+        pathHistory
+    } = useGameStore();
     const { t } = useTranslation();
+    const [statsSaved, setStatsSaved] = useState(false);
 
-    // Map ranks to keys
-    const rankDescriptions: Record<string, string> = {
-        S: t('endgame.legendary'),
-        A: t('endgame.excellent'),
-        B: t('endgame.great'),
-        C: t('endgame.acceptable'),
-        D: t('endgame.completed'),
-        F: t('endgame.failed'),
-    };
-
-    const rankColors: Record<string, string> = {
-        S: 'text-yellow-400 border-yellow-400 shadow-yellow-400/50',
-        A: 'text-emerald-400 border-emerald-400 shadow-emerald-400/50',
-        B: 'text-sky-400 border-sky-400 shadow-sky-400/50',
-        C: 'text-orange-400 border-orange-400 shadow-orange-400/50',
-        D: 'text-slate-400 border-slate-400 shadow-slate-400/50',
-        F: 'text-red-500 border-red-500 shadow-red-500/50',
-    };
-
-    if (status !== 'EXTRACTED' && status !== 'CAUGHT') return null;
-    if (gameMode !== 'EXTRACTION') return null;
-
+    // Stats calculations
     const timeTaken = gameStartTime && gameEndTime ? (gameEndTime - gameStartTime) / 1000 : 0;
     const minutes = Math.floor(timeTaken / 60);
     const seconds = Math.floor(timeTaken % 60);
@@ -36,70 +26,134 @@ export const EndGameScreen: React.FC = () => {
     const rank = finalRank || 'F';
     const isSuccess = status === 'EXTRACTED';
 
+    // Styles Configuration
+    const rankConfig: Record<string, { color: string, bg: string, shadow: string, label: string }> = {
+        S: { color: 'text-yellow-400', bg: 'bg-yellow-500/10', shadow: 'shadow-yellow-500/50', label: t('endgame.legendary') },
+        A: { color: 'text-emerald-400', bg: 'bg-emerald-500/10', shadow: 'shadow-emerald-500/50', label: t('endgame.excellent') },
+        B: { color: 'text-sky-400', bg: 'bg-sky-500/10', shadow: 'shadow-sky-500/50', label: t('endgame.great') },
+        C: { color: 'text-orange-400', bg: 'bg-orange-500/10', shadow: 'shadow-orange-500/50', label: t('endgame.acceptable') },
+        D: { color: 'text-slate-400', bg: 'bg-slate-500/10', shadow: 'shadow-slate-500/50', label: t('endgame.completed') },
+        F: { color: 'text-red-500', bg: 'bg-red-500/10', shadow: 'shadow-red-500/50', label: t('endgame.failed') },
+    };
+
+    const currentRank = rankConfig[rank] || rankConfig['F'];
+
+    // Save stats to Supabase when screen appears
+    useEffect(() => {
+        if ((status === 'EXTRACTED' || status === 'CAUGHT') && !statsSaved && gameMode === 'EXTRACTION') {
+            const saveStats = async () => {
+                const success = await statsService.saveGameSession({
+                    gameMode: gameMode,
+                    status: status,
+                    rank: finalRank,
+                    pathHistory: pathHistory,
+                    durationSeconds: timeTaken,
+                    bonusMissionsCompleted: bonusMissions.filter(m => m.completed).length,
+                    bonusMissionsTotal: bonusMissions.length,
+                });
+
+                if (success) {
+                    setStatsSaved(true);
+                    console.log('✅ Stats saved to Supabase');
+                }
+            };
+
+            saveStats();
+        }
+    }, [status, statsSaved, gameMode, finalRank, pathHistory, timeTaken, bonusMissions]);
+
+    if (status !== 'EXTRACTED' && status !== 'CAUGHT') return null;
+    if (gameMode !== 'EXTRACTION') return null;
+
     return (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/95 backdrop-blur-md p-4 overflow-y-auto">
-            <div className="w-full max-w-sm flex flex-col items-center py-6">
-                {/* Status Icon - Smaller on mobile */}
-                <div className={`mb-4 sm:mb-6 p-4 sm:p-6 rounded-full ${isSuccess ? 'bg-emerald-500/20' : 'bg-red-500/20'}`}>
-                    {isSuccess ? (
-                        <Trophy size={48} className="text-emerald-400 sm:w-16 sm:h-16" />
-                    ) : (
-                        <XCircle size={48} className="text-red-500 sm:w-16 sm:h-16" />
-                    )}
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4 overflow-y-auto">
+            <div className={`w-full max-w-md flex flex-col items-center relative ${isSuccess ? '' : 'animate-shake'}`}>
+
+                {/* Background Glow Effect */}
+                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-[100px] opacity-20 pointer-events-none ${isSuccess ? 'bg-emerald-500' : 'bg-red-500'}`} />
+
+                {/* Header Banner */}
+                <div className="text-center mb-8 animate-slide-up-delay-100 z-10">
+                    <h2 className={`text-sm tracking-[0.2em] font-bold uppercase mb-2 ${isSuccess ? 'text-emerald-400' : 'text-red-500'}`}>
+                        {isSuccess ? 'Mission Report' : 'Connection Lost'}
+                    </h2>
+                    <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white">
+                        {isSuccess ? t('endgame.success') : t('endgame.fail')}
+                    </h1>
                 </div>
 
-                {/* Title */}
-                <h1 className={`text-xl sm:text-2xl font-black uppercase tracking-tight mb-2 text-center ${isSuccess ? 'text-emerald-400' : 'text-red-500'}`}>
-                    {isSuccess ? t('endgame.success') : t('endgame.fail')}
-                </h1>
-
-                {/* Rank Display */}
-                <div className={`my-4 sm:my-6 w-24 h-24 sm:w-28 sm:h-28 rounded-full border-4 flex items-center justify-center shadow-[0_0_20px] ${rankColors[rank]}`}>
-                    <span className={`text-5xl sm:text-6xl font-black ${rankColors[rank].split(' ')[0]}`}>{rank}</span>
+                {/* Main Rank/Trophy Visual */}
+                <div className="relative mb-10 animate-scale-up z-10">
+                    {/* Ring Container */}
+                    <div className={`w-40 h-40 rounded-full border-4 flex items-center justify-center bg-slate-900 ${currentRank.color} ${currentRank.shadow} ${isSuccess ? 'animate-pulse-glow border-current' : 'border-red-900/50'}`}>
+                        {isSuccess ? (
+                            <span className="text-8xl font-black drop-shadow-lg">{rank}</span>
+                        ) : (
+                            <XCircle size={80} className="text-red-500 opacity-80" />
+                        )}
+                    </div>
+                    {/* Rank Label Badge */}
+                    <div className={`absolute -bottom-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full border border-slate-700 bg-slate-900 text-sm font-bold uppercase tracking-wider whitespace-nowrap ${currentRank.color}`}>
+                        {currentRank.label}
+                    </div>
                 </div>
-                <p className={`text-sm sm:text-base font-bold uppercase tracking-widest mb-4 sm:mb-6 ${rankColors[rank].split(' ')[0]}`}>
-                    {rankDescriptions[rank]}
-                </p>
 
-                {/* Stats */}
-                <div className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6">
-                    <div className="flex items-center justify-between mb-3 pb-3 border-b border-slate-700">
-                        <div className="flex items-center gap-2 text-slate-400">
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-3 w-full mb-6 animate-slide-up-delay-200 z-10">
+                    <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl flex flex-col items-center justify-center backdrop-blur-sm">
+                        <div className="flex items-center gap-2 text-slate-400 mb-1">
                             <Clock size={16} />
-                            <span className="font-mono text-xs sm:text-sm">{t('endgame.time')}</span>
+                            <span className="text-xs font-bold uppercase">Time</span>
                         </div>
-                        <span className="font-mono text-xl sm:text-2xl font-bold text-white">
+                        <span className="text-2xl font-mono font-bold text-white">
                             {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
                         </span>
                     </div>
-
-                    {/* Bonus Missions */}
-                    <div className="space-y-2">
-                        <h3 className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t('endgame.bonus')}</h3>
-                        {bonusMissions.map((mission) => (
-                            <div key={mission.id} className="flex items-center justify-between gap-2">
-                                <div className="flex items-center gap-2 min-w-0">
-                                    {mission.type === 'CHECKPOINT' && <MapPin size={14} className="text-amber-400 shrink-0" />}
-                                    {mission.type === 'TIME_BONUS' && <Timer size={14} className="text-sky-400 shrink-0" />}
-                                    {mission.type === 'SPEED_CHALLENGE' && <Zap size={14} className="text-purple-400 shrink-0" />}
-                                    <span className="text-xs sm:text-sm text-slate-300 truncate">{mission.description}</span>
-                                </div>
-                                {mission.completed ? (
-                                    <CheckCircle size={16} className="text-emerald-400 shrink-0" />
-                                ) : (
-                                    <XCircle size={16} className="text-red-500/50 shrink-0" />
-                                )}
-                            </div>
-                        ))}
+                    <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-xl flex flex-col items-center justify-center backdrop-blur-sm">
+                        <div className="flex items-center gap-2 text-slate-400 mb-1">
+                            <Trophy size={16} />
+                            <span className="text-xs font-bold uppercase">Bonus</span>
+                        </div>
+                        <span className="text-2xl font-mono font-bold text-white">
+                            {bonusMissions.filter(m => m.completed).length}/{bonusMissions.length}
+                        </span>
                     </div>
                 </div>
 
-                {/* Play Again Button */}
+                {/* Mission Checklist (Gamified) */}
+                <div className="w-full space-y-3 mb-8 animate-slide-up-delay-300 z-10">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest pl-1 mb-2">Objectives</h3>
+                    {bonusMissions.map((mission) => (
+                        <div
+                            key={mission.id}
+                            className={`flex items-center p-3 rounded-lg border backdrop-blur-sm transition-all duration-300 ${mission.completed
+                                ? 'bg-emerald-500/10 border-emerald-500/30'
+                                : 'bg-slate-900/40 border-slate-800 grayscale opacity-70'
+                                }`}
+                        >
+                            <div className={`p-2 rounded-full mr-3 ${mission.completed ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                                {mission.type === 'CHECKPOINT' && <MapPin size={16} />}
+                                {mission.type === 'TIME_BONUS' && <Timer size={16} />}
+                                {mission.type === 'SPEED_CHALLENGE' && <Zap size={16} />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className={`text-sm font-medium truncate ${mission.completed ? 'text-white' : 'text-slate-400'}`}>
+                                    {mission.description}
+                                </p>
+                            </div>
+                            {mission.completed && (
+                                <CheckCircle size={18} className="text-emerald-400 ml-2 animate-scale-up" />
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Actions */}
                 <button
                     onClick={resetGame}
-                    className="w-full py-3 sm:py-4 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 sm:gap-3 uppercase tracking-wide text-sm sm:text-base pointer-events-auto"
+                    className="w-full py-4 bg-white hover:bg-slate-200 text-slate-950 font-black rounded-xl transition-all active:scale-[0.98] uppercase tracking-wide flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.1)] z-10"
                 >
-                    <RotateCcw size={18} />
+                    <RotateCcw size={20} />
                     {t('endgame.return')}
                 </button>
             </div>
