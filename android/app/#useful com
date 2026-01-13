@@ -1,0 +1,3 @@
+npm run mobile:sync
+npm run mobile:open
+npx cap open android

@@ -4,4 +4,5 @@
     <string name="title_activity_main">Shadow Runner</string>
     <string name="package_name">com.shadowrunner.game</string>
     <string name="custom_url_scheme">com.shadowrunner.game</string>
+    <string name="server_client_id">78645863640-ffv1s5ejhc3fhr5tc3idqphbeandpthp.apps.googleusercontent.com</string>
 </resources>
