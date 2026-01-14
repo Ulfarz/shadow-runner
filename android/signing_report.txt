@@ -1,0 +1,99 @@
+
+> Configure project :app
+WARNING: The option setting 'android.overridePathCheck=true' is experimental.
+The current default is 'false'.
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+> Configure project :capacitor-cordova-android-plugins
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+> Task :app:signingReport
+Variant: debug
+Config: debug
+Store: C:\Users\WildBuck\.android\debug.keystore.bak
+Alias: AndroidDebugKey
+MD5: 9E:65:22:3B:02:FB:A1:2F:F3:BA:9C:A6:FA:E2:B9:F3
+SHA1: D3:FA:26:38:00:D0:C4:A8:63:7A:EA:ED:8F:4D:FA:EA:83:04:DF:60
+SHA-256: 9E:04:81:EB:DF:91:5E:DE:D1:D0:85:32:04:6F:3C:53:16:ED:A3:B1:28:5F:7F:CE:11:1B:DD:97:C6:50:1D:5C
+Valid until: samedi 17 octobre 2054
+----------
+Variant: release
+Config: null
+Store: null
+Alias: null
+----------
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\WildBuck\.android\debug.keystore.bak
+Alias: AndroidDebugKey
+MD5: 9E:65:22:3B:02:FB:A1:2F:F3:BA:9C:A6:FA:E2:B9:F3
+SHA1: D3:FA:26:38:00:D0:C4:A8:63:7A:EA:ED:8F:4D:FA:EA:83:04:DF:60
+SHA-256: 9E:04:81:EB:DF:91:5E:DE:D1:D0:85:32:04:6F:3C:53:16:ED:A3:B1:28:5F:7F:CE:11:1B:DD:97:C6:50:1D:5C
+Valid until: samedi 17 octobre 2054
+----------
+
+> Task :capacitor-android:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\WildBuck\.android\debug.keystore.bak
+Alias: AndroidDebugKey
+MD5: 9E:65:22:3B:02:FB:A1:2F:F3:BA:9C:A6:FA:E2:B9:F3
+SHA1: D3:FA:26:38:00:D0:C4:A8:63:7A:EA:ED:8F:4D:FA:EA:83:04:DF:60
+SHA-256: 9E:04:81:EB:DF:91:5E:DE:D1:D0:85:32:04:6F:3C:53:16:ED:A3:B1:28:5F:7F:CE:11:1B:DD:97:C6:50:1D:5C
+Valid until: samedi 17 octobre 2054
+----------
+
+> Task :capacitor-cordova-android-plugins:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\WildBuck\.android\debug.keystore.bak
+Alias: AndroidDebugKey
+MD5: 9E:65:22:3B:02:FB:A1:2F:F3:BA:9C:A6:FA:E2:B9:F3
+SHA1: D3:FA:26:38:00:D0:C4:A8:63:7A:EA:ED:8F:4D:FA:EA:83:04:DF:60
+SHA-256: 9E:04:81:EB:DF:91:5E:DE:D1:D0:85:32:04:6F:3C:53:16:ED:A3:B1:28:5F:7F:CE:11:1B:DD:97:C6:50:1D:5C
+Valid until: samedi 17 octobre 2054
+----------
+
+> Task :capacitor-geolocation:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\WildBuck\.android\debug.keystore.bak
+Alias: AndroidDebugKey
+MD5: 9E:65:22:3B:02:FB:A1:2F:F3:BA:9C:A6:FA:E2:B9:F3
+SHA1: D3:FA:26:38:00:D0:C4:A8:63:7A:EA:ED:8F:4D:FA:EA:83:04:DF:60
+SHA-256: 9E:04:81:EB:DF:91:5E:DE:D1:D0:85:32:04:6F:3C:53:16:ED:A3:B1:28:5F:7F:CE:11:1B:DD:97:C6:50:1D:5C
+Valid until: samedi 17 octobre 2054
+----------
+
+> Task :capacitor-preferences:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\WildBuck\.android\debug.keystore.bak
+Alias: AndroidDebugKey
+MD5: 9E:65:22:3B:02:FB:A1:2F:F3:BA:9C:A6:FA:E2:B9:F3
+SHA1: D3:FA:26:38:00:D0:C4:A8:63:7A:EA:ED:8F:4D:FA:EA:83:04:DF:60
+SHA-256: 9E:04:81:EB:DF:91:5E:DE:D1:D0:85:32:04:6F:3C:53:16:ED:A3:B1:28:5F:7F:CE:11:1B:DD:97:C6:50:1D:5C
+Valid until: samedi 17 octobre 2054
+----------
+
+> Task :codetrix-studio-capacitor-google-auth:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\WildBuck\.android\debug.keystore.bak
+Alias: AndroidDebugKey
+MD5: 9E:65:22:3B:02:FB:A1:2F:F3:BA:9C:A6:FA:E2:B9:F3
+SHA1: D3:FA:26:38:00:D0:C4:A8:63:7A:EA:ED:8F:4D:FA:EA:83:04:DF:60
+SHA-256: 9E:04:81:EB:DF:91:5E:DE:D1:D0:85:32:04:6F:3C:53:16:ED:A3:B1:28:5F:7F:CE:11:1B:DD:97:C6:50:1D:5C
+Valid until: samedi 17 octobre 2054
+----------
+
+[Incubating] Problems report is available at: file:///D:/Documents/02-D%C3%A9veloppement_Web/Projects/Mobile%20Apps/Shadow%20Runner/android/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 2s
+6 actionable tasks: 6 executed

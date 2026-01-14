@@ -37,12 +37,8 @@ export const authService = {
             // 3. (Optionnel) Vérifie si le profil existe, sinon le trigger SQL le créera
             return data.user;
 
-        } catch (error: any) {
-            console.error('Detailed Connection Error:', {
-                message: error?.message,
-                code: error?.code,
-                fullError: error
-            });
+        } catch (error) {
+            console.error('Google Sign-In Error:', error);
             throw error;
         }
     },

@@ -1,0 +1,99 @@
+
+> Configure project :app
+WARNING: The option setting 'android.overridePathCheck=true' is experimental.
+The current default is 'false'.
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+> Configure project :capacitor-cordova-android-plugins
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+> Task :app:signingReport
+Variant: debug
+Config: debug
+Store: C:\Users\WildBuck\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: 7E:4C:5D:32:B2:77:9F:06:1E:C7:F7:71:4B:EF:A2:FE
+SHA1: FA:37:C7:E4:03:63:FC:0B:6F:E9:D5:B0:77:57:C6:45:E6:64:5C:D7
+SHA-256: 4B:E6:6D:17:D0:AF:51:ED:BF:E7:5C:4F:25:D6:D0:89:25:F1:7A:A6:3E:D8:2E:6F:54:62:6F:5D:88:5A:BD:0F
+Valid until: dimanche 1 juin 2053
+----------
+Variant: release
+Config: null
+Store: null
+Alias: null
+----------
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\WildBuck\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: 7E:4C:5D:32:B2:77:9F:06:1E:C7:F7:71:4B:EF:A2:FE
+SHA1: FA:37:C7:E4:03:63:FC:0B:6F:E9:D5:B0:77:57:C6:45:E6:64:5C:D7
+SHA-256: 4B:E6:6D:17:D0:AF:51:ED:BF:E7:5C:4F:25:D6:D0:89:25:F1:7A:A6:3E:D8:2E:6F:54:62:6F:5D:88:5A:BD:0F
+Valid until: dimanche 1 juin 2053
+----------
+
+> Task :capacitor-android:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\WildBuck\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: 7E:4C:5D:32:B2:77:9F:06:1E:C7:F7:71:4B:EF:A2:FE
+SHA1: FA:37:C7:E4:03:63:FC:0B:6F:E9:D5:B0:77:57:C6:45:E6:64:5C:D7
+SHA-256: 4B:E6:6D:17:D0:AF:51:ED:BF:E7:5C:4F:25:D6:D0:89:25:F1:7A:A6:3E:D8:2E:6F:54:62:6F:5D:88:5A:BD:0F
+Valid until: dimanche 1 juin 2053
+----------
+
+> Task :capacitor-cordova-android-plugins:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\WildBuck\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: 7E:4C:5D:32:B2:77:9F:06:1E:C7:F7:71:4B:EF:A2:FE
+SHA1: FA:37:C7:E4:03:63:FC:0B:6F:E9:D5:B0:77:57:C6:45:E6:64:5C:D7
+SHA-256: 4B:E6:6D:17:D0:AF:51:ED:BF:E7:5C:4F:25:D6:D0:89:25:F1:7A:A6:3E:D8:2E:6F:54:62:6F:5D:88:5A:BD:0F
+Valid until: dimanche 1 juin 2053
+----------
+
+> Task :capacitor-geolocation:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\WildBuck\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: 7E:4C:5D:32:B2:77:9F:06:1E:C7:F7:71:4B:EF:A2:FE
+SHA1: FA:37:C7:E4:03:63:FC:0B:6F:E9:D5:B0:77:57:C6:45:E6:64:5C:D7
+SHA-256: 4B:E6:6D:17:D0:AF:51:ED:BF:E7:5C:4F:25:D6:D0:89:25:F1:7A:A6:3E:D8:2E:6F:54:62:6F:5D:88:5A:BD:0F
+Valid until: dimanche 1 juin 2053
+----------
+
+> Task :capacitor-preferences:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\WildBuck\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: 7E:4C:5D:32:B2:77:9F:06:1E:C7:F7:71:4B:EF:A2:FE
+SHA1: FA:37:C7:E4:03:63:FC:0B:6F:E9:D5:B0:77:57:C6:45:E6:64:5C:D7
+SHA-256: 4B:E6:6D:17:D0:AF:51:ED:BF:E7:5C:4F:25:D6:D0:89:25:F1:7A:A6:3E:D8:2E:6F:54:62:6F:5D:88:5A:BD:0F
+Valid until: dimanche 1 juin 2053
+----------
+
+> Task :codetrix-studio-capacitor-google-auth:signingReport
+Variant: debugAndroidTest
+Config: debug
+Store: C:\Users\WildBuck\.android\debug.keystore
+Alias: AndroidDebugKey
+MD5: 7E:4C:5D:32:B2:77:9F:06:1E:C7:F7:71:4B:EF:A2:FE
+SHA1: FA:37:C7:E4:03:63:FC:0B:6F:E9:D5:B0:77:57:C6:45:E6:64:5C:D7
+SHA-256: 4B:E6:6D:17:D0:AF:51:ED:BF:E7:5C:4F:25:D6:D0:89:25:F1:7A:A6:3E:D8:2E:6F:54:62:6F:5D:88:5A:BD:0F
+Valid until: dimanche 1 juin 2053
+----------
+
+[Incubating] Problems report is available at: file:///D:/Documents/02-D%C3%A9veloppement_Web/Projects/Mobile%20Apps/Shadow%20Runner/android/build/reports/problems/problems-report.html
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD SUCCESSFUL in 2s
+6 actionable tasks: 6 executed
