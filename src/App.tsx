@@ -45,10 +45,19 @@ function App() {
         style={{ opacity: dangerOpacity }}
       />
 
-      {status === 'IDLE' && <MainMenu />}
-      <GameMap />
+      {/* Map - Rendered first (bottom layer) */}
+      {/* Hide when IDLE to ensure black fog doesn't cover main menu on some devices */}
+      <div className={`absolute inset-0 z-0 ${status === 'IDLE' ? 'invisible pointer-events-none' : 'visible'}`}>
+        <GameMap />
+      </div>
+
+
+
       <GameHUD />
       <EndGameScreen />
+
+      {/* Menus on top - Rendered last in DOM for natural stacking + Z-index */}
+      {status === 'IDLE' && <MainMenu />}
     </main>
   )
 }
