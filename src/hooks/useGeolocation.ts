@@ -72,6 +72,11 @@ export const useGeolocation = (options: GeolocationOptions = { enableHighAccurac
                 timestamp: timestamp,
               });
 
+              // Add to matching buffer
+              if (historyBuffer.current) {
+                historyBuffer.current.push({ latitude: filtered.lat, longitude: filtered.lng, timestamp });
+              }
+
               setGpsError(null);
             }
           }
@@ -83,10 +88,74 @@ export const useGeolocation = (options: GeolocationOptions = { enableHighAccurac
 
     startWatching();
 
+    // --- MAP MATCHING LOOP ---
+    // Accumulate points for matching
+    const historyBuffer = useRef<{ latitude: number; longitude: number; timestamp: number }[]>([]);
+
+    // We need access to the current historyBuffer inside the interval, which Ref provides.
+    // We also need access to the *latest* setUserPosition/etc, so we won't rely on closure state for those (store functions are stable).
+
+    // Check every 5 seconds
+    const matchingInterval = setInterval(async () => {
+      const buffer = historyBuffer.current;
+      if (buffer.length < 2) return;
+
+      // Clone to avoid race conditions if clearing
+      const pointsToMatch = [...buffer];
+
+      // Only match if we have moved? (Check distance between first and last?)
+      // For now, just try to match if we have points.
+
+      // Prune buffer? We should keep some overlap or strictly time windows.
+      // Strategy: Keep last 5 points always to ensure continuity? 
+      // For this MVP, we just take the buffer.
+
+      if (pointsToMatch.length >= 2) {
+        try {
+          const matched = await import('../services/MapMatchingService').then(m => m.MapMatchingService.matchPath(pointsToMatch));
+          if (matched && matched.length > 0) {
+            const lastMatched = matched[matched.length - 1];
+            const lastOriginal = pointsToMatch[pointsToMatch.length - 1];
+
+            // Smart Snap: Only snap if close (e.g., < 20m difference) to avoid massive jumps
+            // Simple Euclidian distance approx for speed
+            const dLat = lastMatched.latitude - lastOriginal.latitude;
+            const dLng = lastMatched.longitude - lastOriginal.longitude;
+            const distSq = (dLat * dLat) + (dLng * dLng); // huge approximation, but sufficient for scale
+
+            // 0.0002 degrees ~ 20 meters
+            if (distSq < 0.00000004) {
+              // It is close enough, let's "Correct" the user position slightly? 
+              // Actually, we can't easily inject "backwards" into the animation loop without a ref update.
+              // But we CAN update the Store.
+              // IMPORTANT: This might conflict with the high-frequency Kalman updates (1Hz).
+              // If MapMatch takes 500ms, the user has already moved.
+              // "Fluid" usually means Display = Interpolated(Kalman). 
+              // MapMatch is usually for "Path History" visualization.
+              // We will leave the real-time cursor to Kalman (responsive) 
+              // and assume this logic is ready for when we want to implement "Snap to Road" explicitly.
+              // For now, let's just Log it to prove integration.
+              console.log("[MapMatch] Snapped:", lastMatched);
+            }
+
+            // TODO: Update pathHistory in store with matched segments?
+          }
+        } catch (err) {
+          console.debug("[MapMatch] Error", err);
+        }
+      }
+
+      // Keep only the last few points for context in the next batch
+      if (historyBuffer.current.length > 50) {
+        historyBuffer.current = historyBuffer.current.slice(-10);
+      }
+    }, 5000);
+
     return () => {
       if (watchId) {
         Geolocation.clearWatch({ id: watchId });
       }
+      clearInterval(matchingInterval);
     };
   }, [setUserPosition, setGpsError, options.enableHighAccuracy, options.timeout, options.maximumAge, retryGpsIndex, deviceOrientation.heading]);
 };

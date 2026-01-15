@@ -1,4 +1,4 @@
-import { Feature, Polygon, MultiPolygon } from 'geojson';
+
 
 export interface UserPosition {
     latitude: number;
@@ -61,13 +61,12 @@ export interface GameSlice {
 export interface MapSlice {
     extractionPoint: { latitude: number; longitude: number } | null;
     routeCoordinates: number[][] | null;
-    exploredPolygon: Feature<Polygon | MultiPolygon> | null;
+
     distanceToExtraction: number | null;
     initialDistanceToExtraction: number | null;
     centerOnPlayer: (() => void) | null;
     setExtractionPoint: (point: { latitude: number; longitude: number } | null) => void;
     setRouteCoordinates: (coords: number[][] | null) => void;
-    setExploredPolygon: (polygon: Feature<Polygon | MultiPolygon> | null) => void;
     setDistanceToExtraction: (distance: number | null) => void;
     setInitialDistanceToExtraction: (distance: number | null) => void;
     setCenterOnPlayer: (callback: (() => void) | null) => void;

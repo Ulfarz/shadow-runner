@@ -7,7 +7,6 @@ import { EndGameScreen } from './components/EndGameScreen'
 import { useWakeLock } from './hooks/useWakeLock'
 import { useGeolocation } from './hooks/useGeolocation'
 import { useGameLogic } from './hooks/useGameLogic'
-import { useFogOfWar } from './hooks/useFogOfWar'
 import { useGameStore } from './store/useGameStore'
 // i18n is initialized in main.tsx
 
@@ -19,7 +18,7 @@ function App() {
   useWakeLock();
   useGeolocation();
   useGameLogic();
-  useFogOfWar();
+
 
   // Initialize Auth Service
   useEffect(() => {
@@ -32,16 +31,16 @@ function App() {
   let dangerOpacity = 0;
 
   if (status === 'ACTIVE' && shadowDistance !== null) {
-      // Logic: Opacity = 1.0 when distance is near 0
-      //        Opacity = 0.0 when distance >= MAX_DANGER_DIST
-      const clampedDist = Math.max(0, Math.min(shadowDistance, MAX_DANGER_DIST));
-      dangerOpacity = 1 - (clampedDist / MAX_DANGER_DIST);
+    // Logic: Opacity = 1.0 when distance is near 0
+    //        Opacity = 0.0 when distance >= MAX_DANGER_DIST
+    const clampedDist = Math.max(0, Math.min(shadowDistance, MAX_DANGER_DIST));
+    dangerOpacity = 1 - (clampedDist / MAX_DANGER_DIST);
   }
 
   return (
     <main className="w-full h-[100dvh] relative bg-slate-950 overflow-hidden">
       {/* Red Proximity Overlay */}
-      <div 
+      <div
         className="fixed inset-0 bg-red-600 pointer-events-none z-[60] transition-opacity duration-300 ease-in-out"
         style={{ opacity: dangerOpacity }}
       />

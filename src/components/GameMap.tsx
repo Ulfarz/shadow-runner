@@ -68,27 +68,34 @@ const GameMap: React.FC = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const hasCentered = useRef(false);
-  const followingUser = useRef(true); // Track if we should follow
+  const followingUser = useRef(true);
+
+  // Animation Refs
+  const lastRenderedPos = useRef<{ lat: number; lng: number; heading: number | null } | null>(null);
+  const startPos = useRef<{ lat: number; lng: number; heading: number | null } | null>(null);
+  const targetPos = useRef<{ lat: number; lng: number; heading: number | null } | null>(null);
+  const animationStartTime = useRef<number>(0);
+  const animationFrameId = useRef<number>();
+
   const [isMapLoaded, setIsMapLoaded] = React.useState(false);
 
   // Connect to store
-  const { userPosition, extractionPoint, shadowPosition, status, pathHistory, checkpoint, checkpointReached, setCenterOnPlayer } = useGameStore();
+  const { userPosition, extractionPoint, shadowPosition, status, checkpoint, checkpointReached, pathHistory, shadowDistance, setCenterOnPlayer } = useGameStore();
 
-  // Register centerOnPlayer callback
+  // --- Animation Helpers ---
+  const lerp = (start: number, end: number, t: number) => start + (end - start) * t;
+  const lerpAngle = (start: number, end: number, t: number) => {
+    const delta = ((end - start + 540) % 360) - 180;
+    return start + delta * t;
+  };
+
+  // --- Effects ---
+
+  // 1. Register centerOnPlayer callback
   useEffect(() => {
     setCenterOnPlayer(() => {
       if (map.current && userPosition) {
-        followingUser.current = true; // Re-enable following
-        // The instruction implies a conditional check here, but the original code does not have it.
-        // Assuming the intent is to add these checks around the flyTo logic if status is not GAME_OVER or VICTORY.
-        // However, without the original 'CAUGHT'/'EXTRACTED' context, I will apply the change as a direct replacement
-        // if such checks were present. Since they are not, and the instruction snippet is syntactically incorrect
-        // for a useEffect callback, I will interpret this as a request to ensure that if such checks were to be added,
-        // they should use 'GAME_OVER' and 'VICTORY'.
-        // As the provided code does not contain 'CAUGHT' or 'EXTRACTED' in this useEffect,
-        // and the instruction snippet is not valid JS/TS for this context,
-        // I will make no change to this specific useEffect block, as there's no direct replacement to perform.
-        // If the intent was to add new logic based on GAME_OVER/VICTORY, that would be an addition, not a replacement.
+        followingUser.current = true;
         if (status !== 'GAME_OVER' && status !== 'VICTORY') {
           map.current.flyTo({
             center: [userPosition.longitude, userPosition.latitude],
@@ -99,28 +106,11 @@ const GameMap: React.FC = () => {
       }
     });
     return () => setCenterOnPlayer(null);
-  }, [userPosition, setCenterOnPlayer, status]); // Added status to dependency array
+  }, [userPosition, setCenterOnPlayer, status]);
 
-  // --- Animation & Interpolation Logic ---
-  const lastRenderedPos = useRef<{ lat: number; lng: number; heading: number | null } | null>(null);
-  const startPos = useRef<{ lat: number; lng: number; heading: number | null } | null>(null);
-  const targetPos = useRef<{ lat: number; lng: number; heading: number | null } | null>(null);
-  const animationStartTime = useRef<number>(0);
-  const animationFrameId = useRef<number>();
-
-  // Lerp helper
-  const lerp = (start: number, end: number, t: number) => start + (end - start) * t;
-
-  // Shortest path angle interpolation
-  const lerpAngle = (start: number, end: number, t: number) => {
-    const delta = ((end - start + 540) % 360) - 180;
-    return start + delta * t;
-  };
-
-  // Update Target when userPosition changes
+  // 2. Update Target for Animation
   useEffect(() => {
     if (!userPosition) return;
-
     const newTarget = {
       lat: userPosition.latitude,
       lng: userPosition.longitude,
@@ -128,31 +118,28 @@ const GameMap: React.FC = () => {
     };
 
     if (!lastRenderedPos.current) {
-      // First fix: jump immediately
       lastRenderedPos.current = newTarget;
       startPos.current = newTarget;
       targetPos.current = newTarget;
       animationStartTime.current = performance.now();
     } else {
-      // Subsequent fix: Start animation from where we currently ARE visually
       startPos.current = { ...lastRenderedPos.current };
       targetPos.current = newTarget;
       animationStartTime.current = performance.now();
     }
   }, [userPosition]);
 
-  // Main Animation Loop
+  // 3. Animation Loop
   useEffect(() => {
     const animate = (time: number) => {
       animationFrameId.current = requestAnimationFrame(animate);
 
       if (!isMapLoaded || !map.current || !startPos.current || !targetPos.current || !lastRenderedPos.current) return;
 
-      const duration = 1000; // 1 second interpolation (matches typical GPS interval)
+      const duration = 1000;
       const elapsed = time - animationStartTime.current;
-      const t = Math.min(Math.max(elapsed / duration, 0), 1); // Clamp 0-1
+      const t = Math.min(Math.max(elapsed / duration, 0), 1);
 
-      // Interpolate
       const currentLat = lerp(startPos.current.lat, targetPos.current.lat, t);
       const currentLng = lerp(startPos.current.lng, targetPos.current.lng, t);
 
@@ -161,29 +148,20 @@ const GameMap: React.FC = () => {
         currentHeading = lerpAngle(startPos.current.heading, targetPos.current.heading, t);
       }
 
-      // Update Visual State Ref
-      lastRenderedPos.current = {
-        lat: currentLat,
-        lng: currentLng,
-        heading: currentHeading
-      };
+      lastRenderedPos.current = { lat: currentLat, lng: currentLng, heading: currentHeading };
 
-      // 1. Update Map Source (Marker)
+      // Update Player Marker
       const source = map.current.getSource('player') as mapboxgl.GeoJSONSource;
       if (source) {
         const point = turf.point([currentLng, currentLat]);
         const radiusPoly = turf.circle(point, 0.05, { units: 'kilometers', steps: 64 });
-
         source.setData({
           type: 'FeatureCollection',
           features: [
             {
               type: 'Feature',
               geometry: point.geometry,
-              properties: {
-                type: 'point',
-                heading: currentHeading
-              }
+              properties: { type: 'point', heading: currentHeading }
             },
             {
               type: 'Feature',
@@ -194,31 +172,22 @@ const GameMap: React.FC = () => {
         });
       }
 
-      // 2. Update Camera (Follow)
+      // Update Camera (Auto-follow)
       if (followingUser.current) {
-        // Use jumpTo or setCenter because we are driving the animation loop ourselves.
-        // Using easeTo here would conflict with our manual interpolation.
-        map.current.jumpTo({
-          center: [currentLng, currentLat],
-          // We can also interpolate Heading/Bearing of the camera if we wanted Keyframe-like following
-          // but usually keeping North up or static bearing is preferred unless 'Course Up' mode.
-          // For now, just center.
-        });
+        map.current.jumpTo({ center: [currentLng, currentLat] });
       }
     };
 
     animationFrameId.current = requestAnimationFrame(animate);
-
     return () => {
       if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
     };
-  }, [isMapLoaded]); // Run continuously once map is loaded
+  }, [isMapLoaded]);
 
-  // Initial Center (One off)
+  // 4. Initial Center
   useEffect(() => {
     if (isMapLoaded && map.current && userPosition && !hasCentered.current) {
       followingUser.current = true;
-      // Immediate jump for first load
       map.current.jumpTo({
         center: [userPosition.longitude, userPosition.latitude],
         zoom: 17
@@ -227,431 +196,164 @@ const GameMap: React.FC = () => {
     }
   }, [userPosition, isMapLoaded]);
 
-  // Initialize Map
+  // 5. Initialize Map
   useEffect(() => {
     if (map.current) return;
-
     if (mapContainer.current) {
       try {
-        console.log("Initializing GameMap with Mapbox...");
-
-        // Check if we already have a position to start with
         const initialPos = useGameStore.getState().userPosition;
         const startCenter: [number, number] = initialPos
           ? [initialPos.longitude, initialPos.latitude]
-          : [2.3522, 48.8566]; // Default Paris
+          : [2.3522, 48.8566];
 
-        if (initialPos) {
-          hasCentered.current = true;
-        }
+        if (initialPos) hasCentered.current = true;
 
         map.current = new mapboxgl.Map({
           container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/dark-v11', // Dark style for better gaming feel
+          style: 'mapbox://styles/mapbox/standard',
           center: startCenter,
-          zoom: 16, // Closer zoom for gameplay
-          attributionControl: false, // Hide Mapbox attribution
-          logoPosition: 'bottom-left', // Move logo to less intrusive position
-          pitchWithRotate: false, // Disable pitch with rotate for cleaner mobile UX
-          dragRotate: false, // Disable rotation for simpler UX
-          touchZoomRotate: true, // Keep pinch zoom
-          doubleClickZoom: false, // Disable double-click zoom
-          fadeDuration: 0, // No fade for snappier tile loading
+          zoom: 16,
+          attributionControl: false,
+          logoPosition: 'bottom-left',
+          pitchWithRotate: false,
+          dragRotate: false,
+          touchZoomRotate: true,
+          doubleClickZoom: false,
+          fadeDuration: 0,
         });
 
-        // GeolocateControl for centering on user (no visible button needed, triggered programmatically)
         const geolocateControl = new mapboxgl.GeolocateControl({
           positionOptions: { enableHighAccuracy: true },
           trackUserLocation: true,
-          showUserLocation: false, // We draw our own player marker
+          showUserLocation: false,
           showUserHeading: false
         });
         map.current.addControl(geolocateControl, 'bottom-right');
 
-        // Hide the geolocate button with CSS - we track automatically
         const geolocateBtn = document.querySelector('.mapboxgl-ctrl-geolocate');
         if (geolocateBtn) (geolocateBtn as HTMLElement).style.display = 'none';
 
-        map.current.on('error', (e) => {
-          console.error("Mapbox Error:", e);
-        });
+        map.current.on('error', (e) => console.error("Mapbox Error:", e));
 
-        // Disable following on user interaction
         const stopFollowing = () => {
           if (followingUser.current) {
             console.log("User interaction detected, stopping auto-follow");
             followingUser.current = false;
           }
         };
-
         map.current.on('dragstart', stopFollowing);
         map.current.on('touchstart', stopFollowing);
         map.current.on('wheel', stopFollowing);
-        // Maybe also on pitch/rotate if enabled?
-        // map.current.on('pitchstart', stopFollowing);
 
-
-        // --- 1. REVEAL / INVERTED MASK LOGIC ---
-        const { shadowDistance } = useGameStore();
-
-        // Helper: Create a Cover Box around specific coords (default to Paris if null)
-        const getCoveragePolygon = (coords: { longitude: number, latitude: number } | null) => {
-          const center = coords ? [coords.longitude, coords.latitude] : [2.3522, 48.8566];
-          // 50km box is large enough for gameplay but safe for Turf
-          // bbox around point: buffered by 50km? No, just a bbox.
-          // Simplified: polygon from center +/- 0.5 degrees (~50km)
-          const d = 0.5;
-          const minX = center[0] - d;
-          const maxX = center[0] + d;
-          const minY = center[1] - d;
-          const maxY = center[1] + d;
-          return turf.polygon([[[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY], [minX, minY]]]);
-        };
-
-        // Sync Fog Mask (Subtractive Logic)
-        useEffect(() => {
-          if (!isMapLoaded || !map.current || !map.current.isStyleLoaded()) return;
-
-          const fogSource = map.current.getSource('fog-mask-source') as mapboxgl.GeoJSONSource;
-          const glowSource = map.current.getSource('fog-glow-source') as mapboxgl.GeoJSONSource;
-
-          if (fogSource && glowSource) {
-            try {
-              // A. Define the World Scope (Dynamic Box)
-              // We recreate the "Black Sheet" around the player's current position to ensure it covers the viewport.
-              const maskBox = getCoveragePolygon(userPosition);
-              let maskPolygon = maskBox as any;
-
-              let glowFeatures: any[] = [];
-
-              // B. Create the "Holes" (Revealed Zones)
-
-              // 1. Path History Hole
-              if (pathHistory && pathHistory.length > 1) {
-                // Simplify first for performance
-                let coordinates = pathHistory;
-                if (coordinates.length > 50) {
-                  const line = turf.lineString(coordinates);
-                  const simplified = turf.simplify(line, { tolerance: 0.0001, highQuality: false });
-                  coordinates = simplified.geometry.coordinates;
-                }
-
-                if (coordinates.length > 1) {
-                  const line = turf.lineString(coordinates);
-                  // Buffer: 60m radius (0.06 km)
-                  const bufferedPath = turf.buffer(line, 0.06, { units: 'kilometers', steps: 16 });
-
-                  if (bufferedPath) {
-                    // Cut hole
-                    try {
-                      // We must subtract from the FRESH maskBox each time, 
-                      // but effectively we are iterating.
-                      const diff = turf.difference(turf.featureCollection([maskPolygon, bufferedPath]));
-                      if (diff) maskPolygon = diff;
-                    } catch (e) {
-                      console.warn("Path Subtract Error:", e);
-                    }
-
-                    // Add to glow (the edge of the cut)
-                    glowFeatures.push(bufferedPath);
-                  }
-                }
-              }
-
-              // 2. Current Position Hole (The Flashlight)
-              if (userPosition) {
-                const point = turf.point([userPosition.longitude, userPosition.latitude]);
-                // Buffer: 60m radius for current pos
-                const bufferedPos = turf.buffer(point, 0.06, { units: 'kilometers', steps: 32 });
-
-                if (bufferedPos) {
-                  // Cut hole
-                  try {
-                    const diff = turf.difference(turf.featureCollection([maskPolygon, bufferedPos]));
-                    if (diff) maskPolygon = diff;
-                  } catch (err) {
-                    console.warn("Pos Subtract Error:", err);
-                  }
-
-                  // Add to glow
-                  glowFeatures.push(bufferedPos);
-                }
-              }
-
-              // C. Update Sources
-              fogSource.setData(maskPolygon);
-
-              glowSource.setData({
-                type: 'FeatureCollection',
-                features: glowFeatures
-              });
-
-              // Dynamic Danger Coloring for the Glow
-              if (map.current.getLayer('fog-glow-layer')) {
-                const isDanger = shadowDistance && shadowDistance < 100;
-                map.current.setPaintProperty('fog-glow-layer', 'line-color', isDanger ? '#ef4444' : '#000000');
-              }
-
-            } catch (err) {
-              console.error("Global Fog Error:", err);
-            }
-          }
-
-        }, [pathHistory, userPosition, isMapLoaded, shadowDistance]);
-
-
-        // --- Map Load & Style Setup ---
         map.current.on('load', () => {
           console.log("Map style loaded");
           if (!map.current) return;
 
-          // --- 1. Fog Mask Source (The Black Sheet with Holes) ---
-          // Use initial position or default for the first render
-          // Note: getCoveragePolygon needs to be callable here, checking scope.
-          // Since getCoveragePolygon is defined inside Component, it's fine.
-          // But wait, `getCoveragePolygon` depends on `turf`, which is imported.
-          // BUT, we need one for initialization.
-          const initialCenter = useGameStore.getState().userPosition;
-          const initialPoly = (() => {
-            // Inline simple generator for init
-            const c = initialCenter ? [initialCenter.longitude, initialCenter.latitude] : [2.3522, 48.8566];
-            const d = 0.5;
-            const minX = c[0] - d;
-            const maxX = c[0] + d;
-            const minY = c[1] - d;
-            const maxY = c[1] + d;
-            return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [[[minX, minY], [maxX, minY], [maxX, maxY], [minX, maxY], [minX, minY]]] }, properties: {} } as any;
-          })();
+          // Lighting Init
+          try {
+            const hour = new Date().getHours();
+            let preset = 'day';
+            if (hour >= 5 && hour < 7) preset = 'dawn';
+            else if (hour >= 7 && hour < 17) preset = 'day';
+            else if (hour >= 17 && hour < 19) preset = 'dusk';
+            else preset = 'night';
+            map.current.setConfigProperty('basemap', 'lightPreset', preset);
+          } catch (e) { console.debug("Initial lighting set failed", e); }
 
-          map.current.addSource('fog-mask-source', {
-            type: 'geojson',
-            data: initialPoly
-          });
-
-          // --- 2. Glow Source (The Soft Edges of the Holes) ---
-          map.current.addSource('fog-glow-source', {
+          // --- 0. FOG MASK (Black Overlay) ---
+          map.current.addSource('fog-source', {
             type: 'geojson',
             data: { type: 'FeatureCollection', features: [] }
           });
-
-          // --- 3. Fog Mask Layer (The "Paper") ---
           map.current.addLayer({
-            id: 'fog-mask-layer',
+            id: 'fog-layer',
             type: 'fill',
-            source: 'fog-mask-source',
+            source: 'fog-source',
             paint: {
-              'fill-color': '#000000', // Pitch Black
-              'fill-opacity': 1.0 // Opaque
+              'fill-color': '#000000',
+              'fill-opacity': 0.98 // Almost pitch black, but let a tiny bit of street data bleed if needed, or 1.0 for total darkness
             }
           });
 
-          // --- 4. Glow Layer (The Soft Edge) ---
+          // --- 1. TACTICAL REVEAL LAYERS ---
+          map.current.addSource('reveal-source', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] }
+          });
           map.current.addLayer({
-            id: 'fog-glow-layer',
+            id: 'trail-glow-layer',
             type: 'line',
-            source: 'fog-glow-source', // The "Holes" geometry
-            layout: {
-              'line-cap': 'round',
-              'line-join': 'round'
-            },
+            source: 'reveal-source',
+            filter: ['==', 'type', 'history'],
+            layout: { 'line-cap': 'round', 'line-join': 'round' },
             paint: {
-              'line-color': '#000000',
-              'line-width': 40, // Wide
-              'line-blur': 20, // Very soft
-              'line-opacity': 1.0
+              'line-color': '#00FFCC',
+              'line-width': ['interpolate', ['exponential', 2], ['zoom'], 12, 10, 20, 100],
+              'line-blur': 20,
+              'line-opacity': 0.5
             }
           });
-
-          // --- Add Heading Arrow Image (Synchronous) ---
-          if (!map.current.hasImage('player-arrow')) {
-            const arrowData = createArrowData(64, 64);
-            if (arrowData) {
-              map.current.addImage('player-arrow', arrowData);
-            }
-          }
-
-          // --- Add Flag Image (Synchronous) ---
-          if (!map.current.hasImage('checkpoint-flag')) {
-            const flagData = createFlagData(64, 64);
-            if (flagData) {
-              map.current.addImage('checkpoint-flag', flagData);
-            }
-          }
-
-          // --- Route Source & Layer (Future Path) ---
-          map.current.addSource('route', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] }
-          });
-
           map.current.addLayer({
-            id: 'route-line',
-            type: 'line',
-            source: 'route',
-            layout: {
-              'line-join': 'round',
-              'line-cap': 'round'
-            },
-            paint: {
-              'line-color': '#fbbf24', // Amber-400
-              'line-width': 2,
-              'line-opacity': 0.4,
-              'line-dasharray': [2, 4] // Dotted
-            }
-          });
-
-          // Move Route below glow
-          map.current.moveLayer('route-line', 'trail-glow-layer');
-
-          // --- Extraction Point Source & Layer ---
-          map.current.addSource('extraction', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] }
-          });
-
-          map.current.addLayer({
-            id: 'extraction-glow',
+            id: 'current-pos-glow-layer',
             type: 'circle',
-            source: 'extraction',
-            paint: {
-              'circle-radius': 40,
-              'circle-color': '#10b981', // Emerald-500
-              'circle-opacity': 0.3,
-              'circle-blur': 0.5
-            }
-          });
-
-          map.current.addLayer({
-            id: 'extraction-core',
-            type: 'circle',
-            source: 'extraction',
-            paint: {
-              'circle-radius': 10,
-              'circle-color': '#34d399', // Emerald-400
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#ffffff'
-            }
-          });
-
-          // --- Checkpoint Source & Layer ---
-          map.current.addSource('checkpoint', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] }
-          });
-
-          map.current.addLayer({
-            id: 'checkpoint-glow',
-            type: 'circle',
-            source: 'checkpoint',
-            paint: {
-              'circle-radius': 30,
-              'circle-color': '#f59e0b', // Amber-500
-              'circle-opacity': 0.3,
-              'circle-blur': 0.5
-            }
-          });
-
-          map.current.addLayer({
-            id: 'checkpoint-core',
-            type: 'circle',
-            source: 'checkpoint',
-            paint: {
-              'circle-radius': 8,
-              'circle-color': '#fbbf24', // Amber-400
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#ffffff'
-            }
-          });
-
-          map.current.addLayer({
-            id: 'checkpoint-flag',
-            type: 'symbol',
-            source: 'checkpoint',
-            layout: {
-              'icon-image': 'checkpoint-flag',
-              'icon-size': 0.8,
-              'icon-anchor': 'bottom-left', // Anchor pole bottom to point
-              'icon-offset': [0, 0], // Adjust if needed
-              'icon-allow-overlap': true
-            }
-          });
-
-          // --- Shadow Source & Layer ---
-          map.current.addSource('shadow', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] }
-          });
-
-          map.current.addLayer({
-            id: 'shadow-glow',
-            type: 'circle',
-            source: 'shadow',
+            source: 'reveal-source',
+            filter: ['==', 'type', 'current'],
             paint: {
               'circle-radius': 50,
-              'circle-color': '#ef4444', // Red-500
-              'circle-opacity': 0.2,
-              'circle-blur': 0.4
+              'circle-color': '#00FFCC',
+              'circle-blur': 0.8,
+              'circle-opacity': 0.6
             }
           });
+          if (map.current.getLayer('road-label')) {
+            // Fog is below everything except base
+            // But actually, we want Fog ON TOP of the base map, but BELOW the Reveal Glows.
+            // Mapbox Standard has slots. Let's try putting fog below labels first.
+            map.current.moveLayer('fog-layer', 'road-label');
+            map.current.moveLayer('current-pos-glow-layer', 'road-label');
+            map.current.moveLayer('trail-glow-layer', 'current-pos-glow-layer');
+          }
 
+          // --- 2. GAME LAYERS ---
+          if (!map.current.hasImage('player-arrow')) {
+            const arrowData = createArrowData(64, 64);
+            if (arrowData) map.current.addImage('player-arrow', arrowData);
+          }
+          if (!map.current.hasImage('checkpoint-flag')) {
+            const flagData = createFlagData(64, 64);
+            if (flagData) map.current.addImage('checkpoint-flag', flagData);
+          }
+
+          map.current.addSource('route', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
           map.current.addLayer({
-            id: 'shadow-core',
-            type: 'circle',
-            source: 'shadow',
-            paint: {
-              'circle-radius': 8,
-              'circle-color': '#dc2626', // Red-600
-              'circle-stroke-width': 2,
-              'circle-stroke-color': '#7f1d1d'
-            }
+            id: 'route-line', type: 'line', source: 'route',
+            layout: { 'line-join': 'round', 'line-cap': 'round' },
+            paint: { 'line-color': '#fbbf24', 'line-width': 2, 'line-opacity': 0.4, 'line-dasharray': [2, 4] }
           });
+          map.current.moveLayer('route-line', 'trail-glow-layer'); // Route above trails? Or below? Let's keep it visible.
 
-          // --- Player Source & Layer (Visual Position - On Top) ---
-          map.current.addSource('player', {
-            type: 'geojson',
-            data: { type: 'FeatureCollection', features: [] }
-          });
+          map.current.addSource('extraction', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+          map.current.addLayer({ id: 'extraction-glow', type: 'circle', source: 'extraction', paint: { 'circle-radius': 40, 'circle-color': '#10b981', 'circle-opacity': 0.3, 'circle-blur': 0.5 } });
+          map.current.addLayer({ id: 'extraction-core', type: 'circle', source: 'extraction', paint: { 'circle-radius': 10, 'circle-color': '#34d399', 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' } });
 
-          // Just the arrow for specific heading visualization if needed, 
-          // but the "Glow" is now handled by the reveal-source layers.
-          // We can keep the small sharp marker on top for precision.
-          map.current.addLayer({
-            id: 'player-marker-precision',
-            type: 'circle',
-            source: 'player',
-            filter: ['==', 'type', 'point'],
-            paint: {
-              'circle-radius': 4,
-              'circle-color': '#ffffff',
-              'circle-opacity': 0.9
-            }
-          });
+          map.current.addSource('checkpoint', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+          map.current.addLayer({ id: 'checkpoint-glow', type: 'circle', source: 'checkpoint', paint: { 'circle-radius': 30, 'circle-color': '#f59e0b', 'circle-opacity': 0.3, 'circle-blur': 0.5 } });
+          map.current.addLayer({ id: 'checkpoint-core', type: 'circle', source: 'checkpoint', paint: { 'circle-radius': 8, 'circle-color': '#fbbf24', 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' } });
+          map.current.addLayer({ id: 'checkpoint-flag', type: 'symbol', source: 'checkpoint', layout: { 'icon-image': 'checkpoint-flag', 'icon-size': 0.8, 'icon-anchor': 'bottom-left', 'icon-allow-overlap': true } });
 
-          map.current.addLayer({
-            id: 'player-heading',
-            type: 'symbol',
-            source: 'player',
-            filter: ['==', 'type', 'point'],
-            layout: {
-              'icon-image': 'player-arrow',
-              'icon-size': 0.5,
-              'icon-rotate': ['get', 'heading'],
-              'icon-rotation-alignment': 'map',
-              'icon-allow-overlap': true,
-              'icon-ignore-placement': true
-            },
-            paint: {
-              'icon-opacity': 1
-            }
-          });
+          map.current.addSource('shadow', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+          map.current.addLayer({ id: 'shadow-glow', type: 'circle', source: 'shadow', paint: { 'circle-radius': 50, 'circle-color': '#ef4444', 'circle-opacity': 0.2, 'circle-blur': 0.4 } });
+          map.current.addLayer({ id: 'shadow-core', type: 'circle', source: 'shadow', paint: { 'circle-radius': 8, 'circle-color': '#dc2626', 'circle-stroke-width': 2, 'circle-stroke-color': '#7f1d1d' } });
+
+          map.current.addSource('player', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+          map.current.addLayer({ id: 'player-marker-precision', type: 'circle', source: 'player', filter: ['==', 'type', 'point'], paint: { 'circle-radius': 4, 'circle-color': '#ffffff', 'circle-opacity': 0.9 } });
+          map.current.addLayer({ id: 'player-heading', type: 'symbol', source: 'player', filter: ['==', 'type', 'point'], layout: { 'icon-image': 'player-arrow', 'icon-size': 0.5, 'icon-rotate': ['get', 'heading'], 'icon-rotation-alignment': 'map', 'icon-allow-overlap': true }, paint: { 'icon-opacity': 1 } });
 
           setIsMapLoaded(true);
         });
-      } catch (err) {
-        console.error("Failed to initialize map:", err);
-      }
-    }
 
+      } catch (err) { console.error("Failed to initialize map:", err); }
+    }
     return () => {
       if (map.current) {
         map.current.remove();
@@ -660,89 +362,150 @@ const GameMap: React.FC = () => {
     };
   }, []);
 
-  // Sync Fog of War - REMOVED: Replaced by Reveal Logic
-  // Sync Path History - REMOVED: Replaced by Reveal Logic
+  // 6. Dynamic Lighting Interval
+  useEffect(() => {
+    if (!isMapLoaded || !map.current) return;
+    const updateLightPreset = () => {
+      if (!map.current) return;
+      const hour = new Date().getHours();
+      let preset = 'day';
+      if (hour >= 5 && hour < 7) preset = 'dawn';
+      else if (hour >= 7 && hour < 17) preset = 'day';
+      else if (hour >= 17 && hour < 19) preset = 'dusk';
+      else preset = 'night';
+      try { map.current.setConfigProperty('basemap', 'lightPreset', preset); } catch (e) { }
+    };
+    const intervalId = setInterval(updateLightPreset, 60000);
+    return () => clearInterval(intervalId);
+  }, [isMapLoaded]);
 
-  // Sync Extraction Point
+  // 7. Sync Tactical Reveal & Fog Mask
   useEffect(() => {
     if (!isMapLoaded || !map.current || !map.current.isStyleLoaded()) return;
 
+    // A. Update Glow Sources
+    const revealSource = map.current.getSource('reveal-source') as mapboxgl.GeoJSONSource;
+    if (revealSource) {
+      const features: any[] = [];
+      let pathLineString: any = null;
+      let currentPoint: any = null;
+
+      if (pathHistory && pathHistory.length > 1) {
+        const swappedCoords = pathHistory.map(p => [p[1], p[0]]);
+        pathLineString = { type: 'LineString', coordinates: swappedCoords };
+        features.push({ type: 'Feature', properties: { type: 'history' }, geometry: pathLineString });
+      }
+      if (userPosition) {
+        currentPoint = { type: 'Point', coordinates: [userPosition.longitude, userPosition.latitude] };
+        features.push({ type: 'Feature', properties: { type: 'current' }, geometry: currentPoint });
+      }
+      revealSource.setData({ type: 'FeatureCollection', features: features });
+
+      // B. Update Fog Mask (Subtractive)
+      const fogSource = map.current.getSource('fog-source') as mapboxgl.GeoJSONSource;
+      if (fogSource) {
+        try {
+          // 1. World Polygon (Large Box)
+          const world = turf.polygon([[
+            [-180, 90],
+            [180, 90],
+            [180, -90],
+            [-180, -90],
+            [-180, 90]
+          ]]);
+
+          // 2. Calculate Revealed Area
+          let revealed: any = null;
+
+          // Buffer Path (50m radius)
+          if (pathLineString) {
+            const pathPoly = turf.buffer(pathLineString, 0.05, { units: 'kilometers' });
+            revealed = pathPoly;
+          }
+
+          // Buffer Current Pos (50m radius)
+          if (currentPoint) {
+            const posPoly = turf.buffer(currentPoint, 0.05, { units: 'kilometers' });
+            revealed = revealed ? turf.union(turf.featureCollection([revealed, posPoly])) : posPoly;
+          }
+
+          // 3. Difference
+          if (revealed) {
+            const mask = turf.difference(turf.featureCollection([world, revealed]));
+            if (mask) {
+              fogSource.setData(mask);
+            }
+          } else {
+            // Nothing revealed -> Full Black
+            fogSource.setData(world);
+          }
+        } catch (e) {
+          console.warn("Fog calculation failed:", e);
+        }
+      }
+    }
+  }, [pathHistory, userPosition, isMapLoaded]);
+
+  // 8. Sync Dynamic Color
+  useEffect(() => {
+    if (!isMapLoaded || !map.current || !map.current.isStyleLoaded()) return;
+    let color = '#00FFCC';
+    if (shadowDistance !== null) {
+      if (shadowDistance < 100) color = '#ef4444';
+      else if (shadowDistance < 300) color = '#f97316';
+    }
+    if (map.current.getLayer('trail-glow-layer')) map.current.setPaintProperty('trail-glow-layer', 'line-color', color);
+    if (map.current.getLayer('current-pos-glow-layer')) map.current.setPaintProperty('current-pos-glow-layer', 'circle-color', color);
+  }, [shadowDistance, isMapLoaded]);
+
+  // 9. Sync Extraction
+  useEffect(() => {
+    if (!isMapLoaded || !map.current || !map.current.isStyleLoaded()) return;
     const source = map.current.getSource('extraction') as mapboxgl.GeoJSONSource;
     if (source) {
       if (extractionPoint) {
         source.setData({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [extractionPoint.longitude, extractionPoint.latitude]
-          },
-          properties: {}
+          type: 'Feature', geometry: { type: 'Point', coordinates: [extractionPoint.longitude, extractionPoint.latitude] }, properties: {}
         });
-      } else {
-        source.setData({ type: 'FeatureCollection', features: [] });
-      }
+      } else { source.setData({ type: 'FeatureCollection', features: [] }); }
     }
   }, [extractionPoint, isMapLoaded]);
 
-  // Sync Checkpoint
+  // 10. Sync Checkpoint
   useEffect(() => {
     if (!isMapLoaded || !map.current || !map.current.isStyleLoaded()) return;
-
     const source = map.current.getSource('checkpoint') as mapboxgl.GeoJSONSource;
     if (source) {
       if (checkpoint && !checkpointReached) {
         source.setData({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [checkpoint.longitude, checkpoint.latitude]
-          },
-          properties: {}
+          type: 'Feature', geometry: { type: 'Point', coordinates: [checkpoint.longitude, checkpoint.latitude] }, properties: {}
         });
-      } else {
-        source.setData({ type: 'FeatureCollection', features: [] });
-      }
+      } else { source.setData({ type: 'FeatureCollection', features: [] }); }
     }
   }, [checkpoint, checkpointReached, isMapLoaded]);
 
-  // Sync Shadow Position
+  // 11. Sync Shadow
   useEffect(() => {
     if (!isMapLoaded || !map.current || !map.current.isStyleLoaded()) return;
-
     const source = map.current.getSource('shadow') as mapboxgl.GeoJSONSource;
     if (source) {
       if (shadowPosition) {
         source.setData({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [shadowPosition.longitude, shadowPosition.latitude]
-          },
-          properties: {}
+          type: 'Feature', geometry: { type: 'Point', coordinates: [shadowPosition.longitude, shadowPosition.latitude] }, properties: {}
         });
-      } else {
-        source.setData({ type: 'FeatureCollection', features: [] });
-      }
+      } else { source.setData({ type: 'FeatureCollection', features: [] }); }
     }
   }, [shadowPosition, isMapLoaded]);
 
-  // Sync Player Position & Radius - REMOVED: Handled by Animation Loop
-
-  // Calculate hazard opacity based on distance (start showing at 500m, max at 20m)
+  // 12. Hazard Opacity Logic
   const getHazardOpacity = (shadowDistance: number | null) => {
     if (!shadowDistance && shadowDistance !== 0) return 0;
-    if (status === 'GAME_OVER') return 0.8; // Max intensity
-
+    if (status === 'GAME_OVER') return 0.8;
     const MAX_DIST = 500;
-    const MIN_DIST = 20; // Catch radius
-
+    const MIN_DIST = 20;
     if (shadowDistance > MAX_DIST) return 0;
-
-    // Normalize 0 to 1
-    // (500 - 20) = 480 range
-    // if dist = 260, (500-260)/480 = 0.5
     const intensity = (MAX_DIST - Math.max(shadowDistance, MIN_DIST)) / (MAX_DIST - MIN_DIST);
-    return Math.min(Math.max(intensity, 0), 0.8); // Cap at 0.8
+    return Math.min(Math.max(intensity, 0), 0.8);
   };
 
   const hazardOpacity = useGameStore((state) => getHazardOpacity(state.shadowDistance));
