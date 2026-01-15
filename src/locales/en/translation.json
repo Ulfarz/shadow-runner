@@ -27,18 +27,41 @@
         "warning_title": "Security Warning",
         "warning_desc": "Always stay aware of your real surroundings. Do not play near dangerous roads. Shadow Runner is just a simulation. Your real safety is priority.",
         "btn_understand": "Understood // Initialize",
-        "btn_briefing": "Open Briefing",
+        "btn_briefing": "How to play",
         "gps_locked": "GPS SIGNAL LOCKED",
-        "gps_activate": "ACTIVATE GPS LOCATION"
+        "gps_activate": "ACTIVATE GPS LOCATION",
+        "gps_retry": "RETRY",
+        "profile": "PROFILE"
+    },
+    "profile": {
+        "commander": "COMMANDER",
+        "best_rank": "BEST RANK",
+        "keep_pushing": "Keep pushing your limits",
+        "recent_operations": "RECENT OPERATIONS"
+    },
+    "settings": {
+        "title": "SETTINGS",
+        "language": "LANGUAGE",
+        "about": "ABOUT",
+        "version": "VERSION",
+        "author": "DEVELOPER"
     },
     "config": {
-        "mission_config": "Mission Config",
-        "survival_config": "Survival Config",
-        "target_distance": "Target Distance",
-        "ref_distance": "Reference Distance",
-        "estimated": "Estimated",
-        "back": "BACK",
-        "start": "START"
+        "mission_config": "MISSION CONFIG",
+        "survival_config": "SURVIVAL CONFIG",
+        "target_distance": "TARGET DIST",
+        "ref_distance": "REF DISTANCE",
+        "estimated": "Est. Time",
+        "walking": "WALKING",
+        "running": "RUNNING",
+        "start": "START",
+        "back": "BACK"
+    },
+    "stats": {
+        "distance": "Total Distance",
+        "avg_speed": "Avg Speed",
+        "max_speed": "Max Speed",
+        "min_speed": "Min Speed"
     },
     "hud": {
         "speed": "SPEED",
@@ -58,6 +81,7 @@
         "great": "GREAT",
         "acceptable": "ACCEPTABLE",
         "completed": "COMPLETED",
+        "checkpoint_reached": "CHECKPOINT REACHED",
         "failed": "MISSION FAILED",
         "time": "TIME",
         "bonus": "Bonus Objectives",

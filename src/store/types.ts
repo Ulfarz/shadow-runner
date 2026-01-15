@@ -9,7 +9,7 @@ export interface UserPosition {
     timestamp: number | null;
 }
 
-export type GameStatus = 'IDLE' | 'ACTIVE' | 'EXTRACTED' | 'CAUGHT';
+export type GameStatus = 'IDLE' | 'ACTIVE' | 'PAUSED' | 'GAME_OVER' | 'VICTORY';
 export type GameMode = 'EXTRACTION' | 'SURVIVAL';
 export type MissionRank = 'S' | 'A' | 'B' | 'C' | 'D' | 'F';
 
@@ -30,6 +30,8 @@ export interface PlayerSlice {
     userPosition: UserPosition | null;
     pathHistory: number[][];
     gpsError: string | null;
+    maxSpeed: number;
+    minSpeed: number;
     setUserPosition: (position: UserPosition) => void;
     setGpsError: (error: string | null) => void;
     addToPathHistory: (point: number[]) => void;
@@ -43,8 +45,12 @@ export interface GameSlice {
     gameEndTime: number | null;
     targetDistance: number;
     finalRank: MissionRank | null;
-    setStatus: (status: GameStatus) => void;
+    setStatus: (status: 'IDLE' | 'ACTIVE' | 'PAUSED' | 'GAME_OVER' | 'VICTORY') => void;
     setGameMode: (mode: GameMode | null) => void;
+    gpsError: string | null;
+    setGpsError: (error: string | null) => void;
+    retryGpsIndex: number;
+    triggerGpsRetry: () => void;
     setGameStartTime: (time: number | null) => void;
     setGameEndTime: (time: number | null) => void;
     setTargetDistance: (distance: number) => void;
@@ -77,6 +83,7 @@ export interface ShadowSlice {
     setShadowPosition: (point: { latitude: number; longitude: number } | null) => void;
     setShadowDistance: (distance: number | null) => void;
     setCurrentShadowSpeed: (speed: number) => void;
+    setBaseShadowSpeed: (speed: number) => void;
     resetShadow: () => void;
 }
 

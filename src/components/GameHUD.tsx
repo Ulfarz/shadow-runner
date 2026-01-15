@@ -152,6 +152,25 @@ export const GameHUD: React.FC = () => {
                     </button>
                 </div>
             </div>
+
+            {/* ACHIEVEMENT OVERLAY: Checkpoint Reached */}
+            {checkpointReached && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+                    <div className="flex flex-col items-center animate-in zoom-in-50 duration-500 fade-in fill-mode-forwards">
+                        <div className="text-6xl text-amber-500 drop-shadow-[0_0_25px_rgba(245,158,11,0.8)] mb-4 animate-bounce">
+                            <MapPin size={80} fill="currentColor" />
+                        </div>
+                        <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter drop-shadow-lg text-center bg-black/50 backdrop-blur-md px-8 py-2 rounded-xl border-y-4 border-amber-500">
+                            {t('checkpoint_reached')}
+                        </h2>
+                        <div className="mt-2 flex gap-1">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className={`w-3 h-3 rounded-full bg-amber-500 animate-pulse delay-${i * 100}`} />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

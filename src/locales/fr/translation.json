@@ -27,18 +27,41 @@
         "warning_title": "Avertissement de Sécurité",
         "warning_desc": "Restez toujours attentif à votre environnement réel. Ne jouez pas près des routes dangereuses. Shadow Runner n'est qu'une simulation. Votre sécurité réelle est prioritaire.",
         "btn_understand": "Compris // Initialiser",
-        "btn_briefing": "Consulter le Briefing",
+        "btn_briefing": "Comment jouer",
         "gps_locked": "SIGNAL GPS VERROUILLÉ",
-        "gps_activate": "ACTIVEZ LA LOCALISATION GPS"
+        "gps_activate": "ACTIVEZ LA LOCALISATION GPS",
+        "gps_retry": "RELANCER",
+        "profile": "PROFIL"
+    },
+    "profile": {
+        "commander": "COMMANDANT",
+        "best_rank": "MEILLEUR RANG",
+        "keep_pushing": "Repoussez vos limites",
+        "recent_operations": "OPÉRATIONS RÉCENTES"
+    },
+    "settings": {
+        "title": "PARAMÈTRES",
+        "language": "LANGUE",
+        "about": "À PROPOS",
+        "version": "VERSION",
+        "author": "DÉVELOPPEUR"
     },
     "config": {
-        "mission_config": "Config Mission",
-        "survival_config": "Config Survie",
-        "target_distance": "Distance cible",
-        "ref_distance": "Distance Réf.",
-        "estimated": "Estimé",
-        "back": "RETOUR",
-        "start": "LANCER"
+        "mission_config": "CONFIG MISSION",
+        "survival_config": "CONFIG SURVIE",
+        "target_distance": "DISTANCE CIBLE",
+        "ref_distance": "DISTANCE REF",
+        "estimated": "Temps Estimé",
+        "walking": "MARCHE",
+        "running": "COURSE",
+        "start": "LANCER",
+        "back": "RETOUR"
+    },
+    "stats": {
+        "distance": "Distance Totale",
+        "avg_speed": "Vitesse Moyenne",
+        "max_speed": "Vitesse Max",
+        "min_speed": "Vitesse Min"
     },
     "hud": {
         "speed": "VITESSE",
@@ -58,6 +81,7 @@
         "great": "SUPERBE",
         "acceptable": "ACCEPTABLE",
         "completed": "COMPLÉTÉ",
+        "checkpoint_reached": "CHECKPOINT ATTEINT",
         "failed": "ÉCHEC DE MISSION",
         "time": "TEMPS",
         "bonus": "Objectifs Bonus",

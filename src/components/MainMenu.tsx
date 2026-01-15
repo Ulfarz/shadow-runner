@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { useGameStore, GameMode } from '../store/useGameStore';
-import { Target, ShieldAlert, Play, Map as MapIcon, ChevronLeft, Info, X, Footprints, Ghost, Zap, Clock, FileText, AlertTriangle, Globe, LogOut } from 'lucide-react';
+import { Target, ShieldAlert, Play, Map as MapIcon, ChevronLeft, Info, X, Footprints, Ghost, Zap, Clock, FileText, AlertTriangle, Globe, LogOut, Radar, User, Settings } from 'lucide-react';
+import { ProfileScreen } from './ProfileScreen';
+import { SettingsScreen } from './SettingsScreen';
 import { useTranslation } from 'react-i18next';
 import { authService } from '../services/authService';
 import { supabase } from '../services/supabase';
-import { User } from '@supabase/supabase-js';
+import { User as SupabaseUser } from '@supabase/supabase-js';
 
 export const MainMenu: React.FC = () => {
-    const { setGameMode, setStatus, targetDistance, setTargetDistance, userPosition, gpsError } = useGameStore();
+    const { setGameMode, setStatus, targetDistance, setTargetDistance, userPosition, gpsError, setBaseShadowSpeed, triggerGpsRetry } = useGameStore();
     const [selectedMode, setSelectedMode] = useState<GameMode | null>(null);
+    const [movementType, setMovementType] = useState<'WALK' | 'RUN'>('RUN');
     const [inputValue, setInputValue] = useState(targetDistance.toString());
     const [showNotice, setShowNotice] = useState(false);
-    const [user, setUser] = useState<User | null>(null);
-    const { t, i18n } = useTranslation();
+    const [user, setUser] = useState<SupabaseUser | null>(null);
+    const { t } = useTranslation();
+    const [showProfile, setShowProfile] = useState(false);
+    const [showSettings, setShowSettings] = useState(false);
 
     useEffect(() => {
         // Get initial user
@@ -44,6 +49,76 @@ export const MainMenu: React.FC = () => {
         }
     };
 
+    // AUTH GATE - Security Clearance Check
+    if (!user) {
+        return (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-md overflow-hidden p-4">
+                {/* Background decoration */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-500/5 rounded-full blur-[100px]" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-red-500/5 rounded-full blur-[100px]" />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-[1px] bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
+                </div>
+
+                <div className="max-w-md w-full flex flex-col items-center relative z-10">
+                    {/* Logo */}
+                    <div className="mb-12 text-center w-full">
+                        <div className="flex justify-center mb-6">
+                            <div className="relative">
+                                <ShieldAlert size={64} className="text-slate-800 absolute top-0 left-0 animate-pulse" />
+                                <ShieldAlert size={64} className="text-white relative z-10" />
+                            </div>
+                        </div>
+                        <h1 className="text-5xl font-black text-white tracking-tighter uppercase mb-2 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+                            Shadow <span className="text-red-600">Runner</span>
+                        </h1>
+                        <p className="text-slate-500 font-mono text-xs tracking-[0.3em] uppercase">
+                            // Tactical Infiltration Protocol
+                        </p>
+                    </div>
+
+                    {/* Auth Box */}
+                    <div className="w-full bg-slate-900/50 border border-slate-800 rounded-2xl p-8 backdrop-blur-xl relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                            <LogOut size={120} />
+                        </div>
+
+                        <div className="relative z-10 flex flex-col items-center text-center">
+                            <div className="w-12 h-1 bg-red-500/20 rounded-full mb-6" />
+
+                            <h3 className="text-red-500 font-bold font-mono text-sm uppercase tracking-widest mb-2">
+                                Access Restricted
+                            </h3>
+                            <p className="text-slate-400 text-xs leading-relaxed mb-8 max-w-[250px]">
+                                Authentication required for operational deployment. Establish secure connection to proceed.
+                            </p>
+
+                            <button
+                                onClick={handleGoogleLogin}
+                                className="w-full py-4 bg-white hover:bg-slate-200 text-slate-900 font-black rounded-xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)] flex items-center justify-center gap-3 active:scale-95 group"
+                            >
+                                <Globe size={20} className="text-blue-600 group-hover:rotate-12 transition-transform" />
+                                <span className="tracking-widest text-sm">{t('auth.login_google')}</span>
+                            </button>
+
+                            <div className="mt-6 flex items-center gap-2 text-[10px] text-slate-600 font-mono uppercase">
+                                <div className="w-1.5 h-1.5 rounded-full bg-red-500/50 animate-pulse" />
+                                Security Clearance: None
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer ID */}
+                    <div className="mt-8 text-center opacity-30">
+                        <p className="text-[10px] font-mono text-slate-500 tracking-widest">
+                            SYS.ID: {new Date().getFullYear()}-AUTH-GATE
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     const handleSelectMode = (mode: GameMode) => {
         setSelectedMode(mode);
         setInputValue(targetDistance.toString());
@@ -66,15 +141,17 @@ export const MainMenu: React.FC = () => {
                 parsed = 2.0;
                 setTargetDistance(parsed);
             }
+
+            // Set Shadow Speed based on movement type (Walk=5km/h, Run=15km/h)
+            setBaseShadowSpeed(movementType === 'WALK' ? 5 : 15);
+
             setGameMode(selectedMode);
             setStatus('ACTIVE');
         }
     };
 
-    const toggleLanguage = () => {
-        const newLang = i18n.language === 'en' ? 'fr' : 'en';
-        i18n.changeLanguage(newLang);
-    };
+    // Old language toggle removed in favor of SettingsScreen
+    // const toggleLanguage = ...
 
     // Notice Modal
     const NoticeModal = () => (
@@ -187,6 +264,13 @@ export const MainMenu: React.FC = () => {
     );
 
     // Config screen (after mode selection)
+    if (showProfile) {
+        return <ProfileScreen onClose={() => setShowProfile(false)} />;
+    }
+
+    if (showSettings) {
+        return <SettingsScreen onClose={() => setShowSettings(false)} onLogout={handleLogout} />;
+    }
     if (selectedMode) {
         return (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-md overflow-y-auto p-4">
@@ -209,7 +293,7 @@ export const MainMenu: React.FC = () => {
                         <label className={`block font-bold font-mono text-xs uppercase mb-2 ${selectedMode === 'EXTRACTION' ? 'text-emerald-400' : 'text-red-400'}`}>
                             {selectedMode === 'EXTRACTION' ? t('config.target_distance') : t('config.ref_distance')} (km)
                         </label>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 mb-4">
                             <input
                                 type="number"
                                 min="0.5"
@@ -221,8 +305,41 @@ export const MainMenu: React.FC = () => {
                             />
                             <span className="text-slate-500 font-mono font-bold text-sm">KM</span>
                         </div>
-                        <p className="text-slate-500 text-xs mt-2">
-                            {t('config.estimated')}: {Math.round((parseFloat(inputValue) || 0) * 10)}-{Math.round((parseFloat(inputValue) || 0) * 15)} min
+
+                        {/* Movement Type Selector */}
+                        <div className="flex gap-2 p-1 bg-slate-950 rounded-lg border border-slate-800">
+                            <button
+                                onClick={() => setMovementType('WALK')}
+                                className={`flex-1 py-2 rounded-md text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 ${movementType === 'WALK' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                                    <circle cx="13" cy="5" r="3" />
+                                    <path d="M14 9l-2 3.5-2.5 6 2.5 0.5 2-5 2 5 2.5-0.5-2-5.5-0.5-2.5 2.5-3.5-1.5-1.5z" />
+                                    <path d="M12 9l-3 3-1.5-1.5 3-3z" />
+                                </svg>
+                                {t('config.walking')}
+                            </button>
+                            <button
+                                onClick={() => setMovementType('RUN')}
+                                className={`flex-1 py-2 rounded-md text-xs font-bold uppercase transition-all flex items-center justify-center gap-2 ${movementType === 'RUN' ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
+                            >
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                                    {/* Head */}
+                                    <circle cx="16" cy="5" r="3" />
+                                    {/* Body and Limbs */}
+                                    <path d="M14 8.5l-4 3.5 1.5 5.5-3.5 1 1.5 2.5 5.5-2 3 4.5 2.5-1-4-5.5 2.5-4-3-1.5z" />
+                                    {/* Arms */}
+                                    <path d="M14 8.5l-3.5 2-2.5-1.5 1-2 2.5 1 2.5-2z" />
+                                    <path d="M16 10l3 2 1.5-1.5-1.5-1.5-2 1z" />
+                                    {/* Speed Lines */}
+                                    <path d="M2 11h6v2H2zM3 14h5v2H3zM4 17h4v2H4z" opacity="0.8" />
+                                </svg>
+                                {t('config.running')}
+                            </button>
+                        </div>
+
+                        <p className="text-slate-500 text-xs mt-3 text-center">
+                            {t('config.estimated')}: {Math.round((parseFloat(inputValue) || 0) * (movementType === 'WALK' ? 12 : 5))} min
                         </p>
                     </div>
 
@@ -256,19 +373,10 @@ export const MainMenu: React.FC = () => {
             {showNotice && <NoticeModal />}
 
             <div className="max-w-lg w-full flex flex-col items-center py-6 relative">
-                {/* Language Switcher */}
-                <button
-                    onClick={toggleLanguage}
-                    className="absolute top-0 right-0 p-2 text-slate-500 hover:text-white transition-colors"
-                >
-                    <div className="flex items-center gap-1 text-xs font-mono font-bold">
-                        <Globe size={14} />
-                        <span>{i18n.language.toUpperCase()}</span>
-                    </div>
-                </button>
+                {/* Language Switcher Removed - Moved to Settings */}
 
                 {/* Logo / Header */}
-                <div className="mb-6 sm:mb-10 text-center w-full">
+                <div className="mb-2 text-center w-full">
                     <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tighter uppercase mb-1 drop-shadow-[0_0_15px_rgba(220,38,38,0.5)]">
                         Shadow <span className="text-red-600">Runner</span>
                     </h1>
@@ -277,8 +385,16 @@ export const MainMenu: React.FC = () => {
                     </p>
                 </div>
 
+                {/* Welcome Message (Moved Below Logo) */}
+                <div className="mb-8 flex flex-col items-center animate-in fade-in slide-in-from-top-4 duration-700">
+                    <span className="text-slate-400 text-xs font-mono tracking-[0.2em] uppercase mb-1">{t('auth.welcome')}</span>
+                    <h2 className="text-3xl font-black text-emerald-400 uppercase tracking-wider drop-shadow-[0_0_10px_rgba(52,211,153,0.5)]">
+                        {user?.user_metadata.full_name?.split(' ')[0] || user?.email?.split('@')[0]}
+                    </h2>
+                </div>
+
                 {/* Mode Grid */}
-                <div className="grid grid-cols-1 gap-4 w-full mb-6 sm:mb-10">
+                <div className="grid grid-cols-1 gap-4 w-full mb-6 sm:mb-8">
                     {/* Extraction Mode */}
                     <button
                         onClick={() => handleSelectMode('EXTRACTION')}
@@ -318,59 +434,64 @@ export const MainMenu: React.FC = () => {
                     </button>
                 </div>
 
-                {/* Footer / Briefing Action */}
-                <div className="flex flex-col items-center gap-4 w-full">
-                    {/* Auth Section */}
-                    {user ? (
-                        <div className="flex flex-col items-center gap-2 mb-2">
-                            <div className="flex items-center gap-2 bg-slate-900/50 border border-emerald-500/20 px-4 py-2 rounded-lg">
-                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_5px_#10b981]" />
-                                <span className="text-white text-xs font-mono">
-                                    {t('auth.welcome')}, <span className="text-emerald-400 font-bold">{user.user_metadata.full_name || user.email}</span>
-                                </span>
-                                <button
-                                    onClick={handleLogout}
-                                    className="ml-2 p-1 text-slate-500 hover:text-red-400 transition-colors"
-                                    title="Logout"
-                                >
-                                    <LogOut size={14} />
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <button
-                            onClick={handleGoogleLogin}
-                            className="flex items-center gap-3 px-8 py-2.5 text-xs font-mono font-bold text-white bg-blue-600 hover:bg-blue-500 border border-slate-700 hover:border-blue-400 transition-all tracking-[0.2em] uppercase rounded-xl mb-4 group"
-                        >
-                            <Globe size={16} className="group-hover:rotate-12 transition-transform" />
-                            {t('auth.login_google')}
-                        </button>
-                    )}
-
+                {/* Footer Status Bar */}
+                <div className="flex items-center justify-between w-full px-2 py-3 bg-slate-950/30 border border-slate-800/50 rounded-xl mb-24 backdrop-blur-sm">
+                    {/* Briefing Button */}
                     <button
                         onClick={() => setShowNotice(true)}
-                        className="flex items-center gap-3 px-8 py-2.5 text-xs font-mono font-bold text-cyan-400 bg-cyan-950/20 border-x border-slate-800 hover:border-cyan-500/50 hover:bg-cyan-900/20 transition-all tracking-[0.3em] uppercase group"
+                        className="flex items-center gap-2 text-[10px] sm:text-xs font-mono font-bold text-cyan-400 hover:text-cyan-300 transition-colors tracking-widest uppercase group px-2"
                     >
-                        <FileText size={16} className="group-hover:animate-pulse" />
-                        {t('menu.btn_briefing')}
+                        <FileText size={14} className="group-hover:animate-pulse" />
+                        <span>{t('menu.btn_briefing')}</span>
                     </button>
 
-                    {/* GPS Status Indicator */}
-                    <div className="flex items-center gap-2 transition-all">
+                    {/* Divider */}
+                    <div className="h-4 w-px bg-slate-800" />
+
+                    {/* GPS Status */}
+                    <div className="flex items-center gap-2 px-2">
+                        <button
+                            onClick={() => triggerGpsRetry()}
+                            className="text-slate-500 hover:text-white transition-colors p-1"
+                        >
+                            <Radar size={14} className={!userPosition ? "animate-spin-slow" : ""} />
+                        </button>
+
                         {userPosition && !gpsError ? (
-                            <div className="flex items-center gap-2 text-emerald-500/50 text-[10px] font-mono tracking-widest uppercase">
+                            <div className="flex items-center gap-1.5 text-emerald-500/90 text-[10px] sm:text-xs font-mono tracking-wider uppercase">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_#10b981] animate-pulse" />
                                 {t('menu.gps_locked')}
                             </div>
                         ) : (
-                            <div className="flex items-center gap-2 text-red-500 text-[10px] font-mono font-bold tracking-wide animate-pulse">
+                            <div className="flex items-center gap-1.5 text-red-500/90 text-[10px] sm:text-xs font-mono font-bold tracking-wider animate-pulse">
                                 <AlertTriangle size={12} />
-                                <span>{t('menu.gps_activate')}</span>
+                                {t('menu.gps_activate')}
                             </div>
                         )}
                     </div>
                 </div>
             </div>
-        </div>
+
+            {/* Bottom Menu Bar */}
+            <div className="absolute bottom-6 left-6 right-6 z-20">
+                <div className="flex gap-4">
+                    <button
+                        onClick={() => setShowProfile(true)}
+                        className="flex-1 bg-slate-900/80 backdrop-blur-md border border-slate-700/50 p-4 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition-transform"
+                    >
+                        <User className="text-slate-400" />
+                        <span className="text-[10px] font-bold text-slate-400 tracking-wider">PROFILE</span>
+                    </button>
+
+                    <button
+                        onClick={() => setShowSettings(true)}
+                        className="flex-1 bg-slate-900/80 backdrop-blur-md border border-slate-700/50 p-4 rounded-2xl flex flex-col items-center gap-2 active:scale-95 transition-transform"
+                    >
+                        <Settings className="text-slate-400" />
+                        <span className="text-[10px] font-bold text-slate-400 tracking-wider">SETTINGS</span>
+                    </button>
+                </div>
+            </div>
+        </div >
     );
 };

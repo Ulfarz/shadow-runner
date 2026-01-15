@@ -248,7 +248,7 @@ export const useGameLogic = () => {
 
                     const rank = calculateRank(timeSeconds, targetDistance, completedCount, bonusMissions.length, false);
                     setFinalRank(rank);
-                    setStatus('EXTRACTED');
+                    setStatus('VICTORY');
                     return;
                 }
             }
@@ -260,7 +260,7 @@ export const useGameLogic = () => {
             if (distToShadow < SHADOW_CATCH_RADIUS_M) {
                 setGameEndTime(Date.now());
                 setFinalRank('F');
-                setStatus('CAUGHT');
+                setStatus('GAME_OVER');
                 return;
             }
 

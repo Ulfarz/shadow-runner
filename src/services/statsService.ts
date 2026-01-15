@@ -21,8 +21,9 @@ export interface GameSession {
     id?: string;
     user_id: string;
     game_mode: 'EXTRACTION' | 'SURVIVAL';
-    status: 'EXTRACTED' | 'CAUGHT';
-    rank: string | null;
+    status: 'VICTORY' | 'GAME_OVER';
+    rank?: string | null;
+    path_coordinates: number[][]; // Added this
     distance_km: number;
     duration_seconds: number;
     bonus_missions_completed: number;
@@ -104,9 +105,9 @@ export const statsService = {
      */
     async saveGameSession(sessionData: {
         gameMode: 'EXTRACTION' | 'SURVIVAL';
-        status: 'EXTRACTED' | 'CAUGHT';
+        status: 'VICTORY' | 'GAME_OVER';
         rank: string | null;
-        pathHistory: number[][];
+        pathHistory: number[][]; // We only need this one input
         durationSeconds: number;
         bonusMissionsCompleted: number;
         bonusMissionsTotal: number;
@@ -127,6 +128,7 @@ export const statsService = {
                 game_mode: sessionData.gameMode,
                 status: sessionData.status,
                 rank: sessionData.rank,
+                path_coordinates: sessionData.pathHistory, // Map here
                 distance_km: distanceKm,
                 duration_seconds: sessionData.durationSeconds,
                 bonus_missions_completed: sessionData.bonusMissionsCompleted,
@@ -156,8 +158,8 @@ export const statsService = {
             // Calculate new stats
             const newTotalDistance = (profile?.total_distance_km || 0) + distanceKm;
             const newTotalGames = (profile?.total_games_played || 0) + 1;
-            const newExtractions = (profile?.total_extractions || 0) + (sessionData.status === 'EXTRACTED' ? 1 : 0);
-            const newCaught = (profile?.total_caught || 0) + (sessionData.status === 'CAUGHT' ? 1 : 0);
+            const newExtractions = (profile?.total_extractions || 0) + (sessionData.status === 'VICTORY' ? 1 : 0);
+            const newCaught = (profile?.total_caught || 0) + (sessionData.status === 'GAME_OVER' ? 1 : 0);
             const newBestRank = isBetterRank(sessionData.rank, profile?.best_rank || null)
                 ? sessionData.rank
                 : profile?.best_rank;

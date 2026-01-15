@@ -30,4 +30,8 @@ conductor/setup_state.json
 # Coverage
 coverage/
 
+
 .env
+
+# Firebase
+.firebase/

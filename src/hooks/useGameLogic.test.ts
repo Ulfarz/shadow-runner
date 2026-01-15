@@ -52,7 +52,7 @@ describe('useGameLogic', () => {
     renderHook(() => useGameLogic());
 
     act(() => {
-      useGameStore.setState({ 
+      useGameStore.setState({
         userPosition: position,
         status: 'ACTIVE',
         extractionPoint: { latitude: 48.8766, longitude: 2.3522 },
@@ -84,7 +84,7 @@ describe('useGameLogic', () => {
     renderHook(() => useGameLogic());
 
     act(() => {
-      useGameStore.setState({ 
+      useGameStore.setState({
         userPosition: position,
         status: 'ACTIVE',
         extractionPoint: { latitude: 48.8766, longitude: 2.3522 },
@@ -96,7 +96,7 @@ describe('useGameLogic', () => {
       vi.advanceTimersByTime(100);
     });
 
-    expect(useGameStore.getState().status).toBe('CAUGHT');
+    expect(useGameStore.getState().status).toBe('GAME_OVER');
   });
 
   it('should end game when user reaches extraction point', () => {
@@ -112,7 +112,7 @@ describe('useGameLogic', () => {
     renderHook(() => useGameLogic());
 
     act(() => {
-      useGameStore.setState({ 
+      useGameStore.setState({
         userPosition: position,
         status: 'ACTIVE',
         extractionPoint: { latitude: 48.8566, longitude: 2.3522 }, // Same as user
@@ -124,6 +124,6 @@ describe('useGameLogic', () => {
       vi.advanceTimersByTime(100);
     });
 
-    expect(useGameStore.getState().status).toBe('EXTRACTED');
+    expect(useGameStore.getState().status).toBe('VICTORY');
   });
 });
