@@ -80,7 +80,7 @@ const GameMap: React.FC = () => {
   const [isMapLoaded, setIsMapLoaded] = React.useState(false);
 
   // Connect to store
-  const { userPosition, extractionPoint, shadowPosition, status, checkpoint, checkpointReached, pathHistory, shadowDistance, setCenterOnPlayer } = useGameStore();
+  const { userPosition, extractionPoint, shadowPosition, status, checkpoint, checkpointReached, pathHistory, shadowDistance, setCenterOnPlayer, setCenterOnExtraction } = useGameStore();
 
   // --- Animation Helpers ---
   const lerp = (start: number, end: number, t: number) => start + (end - start) * t;
@@ -107,6 +107,22 @@ const GameMap: React.FC = () => {
     });
     return () => setCenterOnPlayer(null);
   }, [userPosition, setCenterOnPlayer, status]);
+
+  // 1b. Register centerOnExtraction callback
+  useEffect(() => {
+    setCenterOnExtraction(() => {
+      if (map.current && extractionPoint) {
+        followingUser.current = false; // Stop following user
+        map.current.flyTo({
+          center: [extractionPoint.longitude, extractionPoint.latitude],
+          zoom: 16,
+          pitch: 60, // Cinematic angle
+          duration: 2000
+        });
+      }
+    });
+    return () => setCenterOnExtraction(null);
+  }, [extractionPoint, setCenterOnExtraction]);
 
   // 2. Update Target for Animation
   useEffect(() => {
@@ -305,13 +321,14 @@ const GameMap: React.FC = () => {
               'circle-opacity': 0.6
             }
           });
-          if (map.current.getLayer('road-label')) {
-            // Fog is below everything except base
-            // But actually, we want Fog ON TOP of the base map, but BELOW the Reveal Glows.
-            // Mapbox Standard has slots. Let's try putting fog below labels first.
-            map.current.moveLayer('fog-layer', 'road-label');
-            map.current.moveLayer('current-pos-glow-layer', 'road-label');
-            map.current.moveLayer('trail-glow-layer', 'current-pos-glow-layer');
+          // Move fog layer to top of stack, then add glow layers above it
+          // This ensures fog covers the entire base map (including labels)
+          try {
+            map.current.moveLayer('fog-layer'); // Move to top
+            map.current.moveLayer('current-pos-glow-layer'); // Above fog
+            map.current.moveLayer('trail-glow-layer'); // Above current glow
+          } catch (e) {
+            console.debug('Layer ordering fallback:', e);
           }
 
           // --- 2. GAME LAYERS ---
@@ -333,8 +350,35 @@ const GameMap: React.FC = () => {
           map.current.moveLayer('route-line', 'trail-glow-layer'); // Route above trails? Or below? Let's keep it visible.
 
           map.current.addSource('extraction', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-          map.current.addLayer({ id: 'extraction-glow', type: 'circle', source: 'extraction', paint: { 'circle-radius': 40, 'circle-color': '#10b981', 'circle-opacity': 0.3, 'circle-blur': 0.5 } });
-          map.current.addLayer({ id: 'extraction-core', type: 'circle', source: 'extraction', paint: { 'circle-radius': 10, 'circle-color': '#34d399', 'circle-stroke-width': 2, 'circle-stroke-color': '#ffffff' } });
+          map.current.addLayer({
+            id: 'extraction-glow', type: 'circle', source: 'extraction',
+            paint: {
+              'circle-radius': 60, // Much larger glow
+              'circle-color': '#34d399', // Emerald-400 (Brighter)
+              'circle-opacity': 0.4,
+              'circle-blur': 0.6
+            }
+          });
+          map.current.addLayer({
+            id: 'extraction-core', type: 'circle', source: 'extraction',
+            paint: {
+              'circle-radius': 15,
+              'circle-color': '#10b981', // Emerald-500
+              'circle-stroke-width': 4, // Thicker border
+              'circle-stroke-color': '#ecfdf5' // Emerald-50 (Near white)
+            }
+          });
+          // Add a pulsating ring effect (simulated with a second transparent larger circle)
+          map.current.addLayer({
+            id: 'extraction-ring', type: 'circle', source: 'extraction',
+            paint: {
+              'circle-radius': 80,
+              'circle-color': '#059669', // Emerald-600
+              'circle-opacity': 0.15,
+              'circle-stroke-width': 1,
+              'circle-stroke-color': '#34d399'
+            }
+          });
 
           map.current.addSource('checkpoint', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
           map.current.addLayer({ id: 'checkpoint-glow', type: 'circle', source: 'checkpoint', paint: { 'circle-radius': 30, 'circle-color': '#f59e0b', 'circle-opacity': 0.3, 'circle-blur': 0.5 } });
@@ -348,6 +392,29 @@ const GameMap: React.FC = () => {
           map.current.addSource('player', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
           map.current.addLayer({ id: 'player-marker-precision', type: 'circle', source: 'player', filter: ['==', 'type', 'point'], paint: { 'circle-radius': 4, 'circle-color': '#ffffff', 'circle-opacity': 0.9 } });
           map.current.addLayer({ id: 'player-heading', type: 'symbol', source: 'player', filter: ['==', 'type', 'point'], layout: { 'icon-image': 'player-arrow', 'icon-size': 0.5, 'icon-rotate': ['get', 'heading'], 'icon-rotation-alignment': 'map', 'icon-allow-overlap': true }, paint: { 'icon-opacity': 1 } });
+
+          // --- 3. FINAL LAYER REORDERING ---
+          // Explicitly enforce z-index stack (Bottom -> Top)
+          const orderedLayers = [
+            'fog-layer',                // Bottom: Fog Mask
+            'trail-glow-layer',         // Reveal History
+            'current-pos-glow-layer',   // Reveal Current
+            'route-line',               // Route
+            'extraction-glow',          // Extraction Base
+            'extraction-ring',          // Extraction Ring
+            'extraction-core',          // Extraction Center
+            'checkpoint-glow', 'checkpoint-core', 'checkpoint-flag',
+            'shadow-glow', 'shadow-core',
+            'player-marker-precision', 'player-heading' // Top: Player
+          ];
+
+          orderedLayers.forEach(id => {
+            try {
+              if (map.current?.getLayer(id)) map.current.moveLayer(id);
+            } catch (e) {
+              console.debug(`Failed to move layer ${id}:`, e);
+            }
+          });
 
           setIsMapLoaded(true);
         });
@@ -421,13 +488,14 @@ const GameMap: React.FC = () => {
           let worldBounds: any;
           if (userPosition) {
             const center = [userPosition.longitude, userPosition.latitude];
-            // Create a ~10km box around player
+            // Create a ~100km box around player (0.5 degrees ≈ 55km in each direction)
+            // This ensures fog coverage at all zoom levels
             worldBounds = turf.polygon([[
-              [center[0] - 0.1, center[1] + 0.1],
-              [center[0] + 0.1, center[1] + 0.1],
-              [center[0] + 0.1, center[1] - 0.1],
-              [center[0] - 0.1, center[1] - 0.1],
-              [center[0] - 0.1, center[1] + 0.1]
+              [center[0] - 0.5, center[1] + 0.5],
+              [center[0] + 0.5, center[1] + 0.5],
+              [center[0] + 0.5, center[1] - 0.5],
+              [center[0] - 0.5, center[1] - 0.5],
+              [center[0] - 0.5, center[1] + 0.5]
             ]]);
           } else {
             // Fallback: full world

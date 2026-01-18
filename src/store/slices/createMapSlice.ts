@@ -8,11 +8,13 @@ export const createMapSlice: StateCreator<GameState, [], [], MapSlice> = (set) =
     distanceToExtraction: null,
     initialDistanceToExtraction: null,
     centerOnPlayer: null,
+    centerOnExtraction: null,
     setExtractionPoint: (point) => set({ extractionPoint: point }),
     setRouteCoordinates: (coords) => set({ routeCoordinates: coords }),
     setDistanceToExtraction: (distance) => set({ distanceToExtraction: distance }),
     setInitialDistanceToExtraction: (distance) => set({ initialDistanceToExtraction: distance }),
     setCenterOnPlayer: (callback) => set({ centerOnPlayer: callback }),
+    setCenterOnExtraction: (callback) => set({ centerOnExtraction: callback }),
     resetMap: () => set({
         extractionPoint: null,
         routeCoordinates: null,
@@ -20,3 +22,4 @@ export const createMapSlice: StateCreator<GameState, [], [], MapSlice> = (set) =
         initialDistanceToExtraction: null,
     }),
 });
+

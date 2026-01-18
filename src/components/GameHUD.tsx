@@ -13,7 +13,9 @@ export const GameHUD: React.FC = () => {
     const checkpointReached = useGameStore((state) => state.checkpointReached);
     const bonusMissions = useGameStore((state) => state.bonusMissions);
     const status = useGameStore((state) => state.status);
+
     const centerOnPlayer = useGameStore((state) => state.centerOnPlayer);
+    const centerOnExtraction = useGameStore((state) => state.centerOnExtraction);
 
     // Format speed from m/s to km/h
     const formatSpeed = (speed: number | null) => {
@@ -141,6 +143,17 @@ export const GameHUD: React.FC = () => {
                             </>
                         )}
                     </div>
+
+                    {/* Locate Extraction Button (only in Extraction Mode) */}
+                    {gameMode === 'EXTRACTION' && (
+                        <button
+                            onClick={() => centerOnExtraction?.()}
+                            className="pointer-events-auto bg-emerald-900/80 backdrop-blur-sm rounded-full p-3 active:bg-emerald-700 transition-colors border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                            aria-label="Locate Extraction"
+                        >
+                            <Target size={24} className="text-emerald-400" />
+                        </button>
+                    )}
 
                     {/* Center on Player Button */}
                     <button

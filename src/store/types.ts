@@ -63,11 +63,13 @@ export interface MapSlice {
     distanceToExtraction: number | null;
     initialDistanceToExtraction: number | null;
     centerOnPlayer: (() => void) | null;
+    centerOnExtraction: (() => void) | null;
     setExtractionPoint: (point: { latitude: number; longitude: number } | null) => void;
     setRouteCoordinates: (coords: number[][] | null) => void;
     setDistanceToExtraction: (distance: number | null) => void;
     setInitialDistanceToExtraction: (distance: number | null) => void;
     setCenterOnPlayer: (callback: (() => void) | null) => void;
+    setCenterOnExtraction: (callback: (() => void) | null) => void;
     resetMap: () => void;
 }
 
