@@ -47,8 +47,6 @@ export interface GameSlice {
     finalRank: MissionRank | null;
     setStatus: (status: 'IDLE' | 'ACTIVE' | 'PAUSED' | 'GAME_OVER' | 'VICTORY') => void;
     setGameMode: (mode: GameMode | null) => void;
-    gpsError: string | null;
-    setGpsError: (error: string | null) => void;
     retryGpsIndex: number;
     triggerGpsRetry: () => void;
     setGameStartTime: (time: number | null) => void;

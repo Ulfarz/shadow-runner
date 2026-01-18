@@ -161,7 +161,7 @@ export const GameHUD: React.FC = () => {
                             <MapPin size={80} fill="currentColor" />
                         </div>
                         <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter drop-shadow-lg text-center bg-black/50 backdrop-blur-md px-8 py-2 rounded-xl border-y-4 border-amber-500">
-                            {t('checkpoint_reached')}
+                            {t('endgame.checkpoint_reached')}
                         </h2>
                         <div className="mt-2 flex gap-1">
                             {[1, 2, 3].map((i) => (

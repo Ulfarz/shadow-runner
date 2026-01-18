@@ -102,7 +102,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onClose, onLogou
                     onClick={onLogout}
                     className="w-full py-4 rounded-xl bg-red-950/30 border border-red-900/50 text-red-500 font-bold tracking-widest hover:bg-red-900/30 transition-colors uppercase text-sm"
                 >
-                    DISCONNECT
+                    {t('settings.disconnect', 'DISCONNECT')}
                 </button>
             </div>
 

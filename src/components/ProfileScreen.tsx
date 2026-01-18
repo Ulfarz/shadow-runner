@@ -83,7 +83,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onClose }) => {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
                                 <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase mb-1">
-                                    <Map size={14} /> Dist. Total
+                                    <Map size={14} /> {t('profile.total_distance', 'Total Dist.')}
                                 </div>
                                 <div className="text-2xl font-black text-emerald-400">
                                     {profile?.total_distance_km.toFixed(1) || '0.0'} <span className="text-xs text-emerald-500/50">km</span>
@@ -91,7 +91,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onClose }) => {
                             </div>
                             <div className="bg-slate-800/50 p-3 rounded-xl border border-slate-700/50">
                                 <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase mb-1">
-                                    <Activity size={14} /> Games
+                                    <Activity size={14} /> {t('profile.games', 'Games')}
                                 </div>
                                 <div className="text-2xl font-black text-blue-400">
                                     {profile?.total_games_played || 0}
@@ -170,6 +170,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ onClose }) => {
                     </div>
                 </div>
             </div>
-        </div>
+        </div >
     );
 };

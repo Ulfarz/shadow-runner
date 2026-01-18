@@ -383,14 +383,26 @@ const GameMap: React.FC = () => {
   useEffect(() => {
     if (!isMapLoaded || !map.current || !map.current.isStyleLoaded()) return;
 
-    // A. Update Glow Sources
+    const fogSource = map.current.getSource('fog-source') as mapboxgl.GeoJSONSource;
     const revealSource = map.current.getSource('reveal-source') as mapboxgl.GeoJSONSource;
+
+    // When game is NOT active, clear the fog (show full map for menu)
+    if (status !== 'ACTIVE') {
+      if (fogSource) fogSource.setData({ type: 'FeatureCollection', features: [] });
+      if (revealSource) revealSource.setData({ type: 'FeatureCollection', features: [] });
+      return;
+    }
+
+    // --- GAME IS ACTIVE: Apply Fog of War ---
+
+    // A. Update Glow Sources (Trail + Current Position)
     if (revealSource) {
       const features: any[] = [];
       let pathLineString: any = null;
       let currentPoint: any = null;
 
       if (pathHistory && pathHistory.length > 1) {
+        // pathHistory is [lat, lng], Mapbox needs [lng, lat]
         const swappedCoords = pathHistory.map(p => [p[1], p[0]]);
         pathLineString = { type: 'LineString', coordinates: swappedCoords };
         features.push({ type: 'Feature', properties: { type: 'history' }, geometry: pathLineString });
@@ -401,50 +413,67 @@ const GameMap: React.FC = () => {
       }
       revealSource.setData({ type: 'FeatureCollection', features: features });
 
-      // B. Update Fog Mask (Subtractive)
-      const fogSource = map.current.getSource('fog-source') as mapboxgl.GeoJSONSource;
+      // B. Update Fog Mask (Subtractive - The "Inverted Mask")
       if (fogSource) {
         try {
-          // 1. World Polygon (Large Box)
-          const world = turf.polygon([[
-            [-180, 90],
-            [180, 90],
-            [180, -90],
-            [-180, -90],
-            [-180, 90]
-          ]]);
+          // 1. World Polygon (Black Box covering visible area)
+          // Using a smaller box around player for performance instead of whole world
+          let worldBounds: any;
+          if (userPosition) {
+            const center = [userPosition.longitude, userPosition.latitude];
+            // Create a ~10km box around player
+            worldBounds = turf.polygon([[
+              [center[0] - 0.1, center[1] + 0.1],
+              [center[0] + 0.1, center[1] + 0.1],
+              [center[0] + 0.1, center[1] - 0.1],
+              [center[0] - 0.1, center[1] - 0.1],
+              [center[0] - 0.1, center[1] + 0.1]
+            ]]);
+          } else {
+            // Fallback: full world
+            worldBounds = turf.polygon([[
+              [-180, 90], [180, 90], [180, -90], [-180, -90], [-180, 90]
+            ]]);
+          }
 
-          // 2. Calculate Revealed Area
+          // 2. Calculate Revealed Area (50m buffer around path + current position)
           let revealed: any = null;
 
-          // Buffer Path (50m radius)
+          // Buffer the path (50m = 0.05km)
           if (pathLineString) {
-            const pathPoly = turf.buffer(pathLineString, 0.05, { units: 'kilometers' });
-            revealed = pathPoly;
+            const pathBuffer = turf.buffer(pathLineString, 0.05, { units: 'kilometers' });
+            if (pathBuffer) revealed = pathBuffer;
           }
 
-          // Buffer Current Pos (50m radius)
+          // Buffer current position (50m circle)
           if (currentPoint) {
-            const posPoly = turf.buffer(currentPoint, 0.05, { units: 'kilometers' });
-            revealed = revealed ? turf.union(turf.featureCollection([revealed, posPoly])) : posPoly;
+            const posBuffer = turf.buffer(currentPoint, 0.05, { units: 'kilometers' });
+            if (posBuffer) {
+              revealed = revealed
+                ? turf.union(turf.featureCollection([revealed, posBuffer]))
+                : posBuffer;
+            }
           }
 
-          // 3. Difference
+          // 3. Subtract revealed from world = THE MASK
           if (revealed) {
-            const mask = turf.difference(turf.featureCollection([world, revealed]));
+            const mask = turf.difference(turf.featureCollection([worldBounds, revealed]));
             if (mask) {
               fogSource.setData(mask);
+            } else {
+              // difference returned null (shouldn't happen, but safety)
+              fogSource.setData(worldBounds);
             }
           } else {
-            // Nothing revealed -> Full Black
-            fogSource.setData(world);
+            // Nothing revealed yet -> Full black mask
+            fogSource.setData(worldBounds);
           }
         } catch (e) {
           console.warn("Fog calculation failed:", e);
         }
       }
     }
-  }, [pathHistory, userPosition, isMapLoaded]);
+  }, [pathHistory, userPosition, isMapLoaded, status]);
 
   // 8. Sync Dynamic Color
   useEffect(() => {

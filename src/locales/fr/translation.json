@@ -37,14 +37,17 @@
         "commander": "COMMANDANT",
         "best_rank": "MEILLEUR RANG",
         "keep_pushing": "Repoussez vos limites",
-        "recent_operations": "OPÉRATIONS RÉCENTES"
+        "recent_operations": "OPÉRATIONS RÉCENTES",
+        "total_distance": "Dist. Totale",
+        "games": "Parties"
     },
     "settings": {
         "title": "PARAMÈTRES",
         "language": "LANGUE",
         "about": "À PROPOS",
         "version": "VERSION",
-        "author": "DÉVELOPPEUR"
+        "author": "DÉVELOPPEUR",
+        "disconnect": "DÉCONNEXION"
     },
     "config": {
         "mission_config": "CONFIG MISSION",

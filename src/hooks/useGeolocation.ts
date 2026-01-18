@@ -21,6 +21,9 @@ export const useGeolocation = (options: GeolocationOptions = { enableHighAccurac
   // Persist the filter across renders
   const kalmanFilter = useRef(new LocationKalmanFilter(3)); // 3m min accuracy assumption
 
+  // Buffer for Map Matching (must be at top level, not inside useEffect)
+  const historyBuffer = useRef<{ latitude: number; longitude: number; timestamp: number }[]>([]);
+
   useEffect(() => {
     let watchId: string | null = null;
 
@@ -89,12 +92,6 @@ export const useGeolocation = (options: GeolocationOptions = { enableHighAccurac
     startWatching();
 
     // --- MAP MATCHING LOOP ---
-    // Accumulate points for matching
-    const historyBuffer = useRef<{ latitude: number; longitude: number; timestamp: number }[]>([]);
-
-    // We need access to the current historyBuffer inside the interval, which Ref provides.
-    // We also need access to the *latest* setUserPosition/etc, so we won't rely on closure state for those (store functions are stable).
-
     // Check every 5 seconds
     const matchingInterval = setInterval(async () => {
       const buffer = historyBuffer.current;

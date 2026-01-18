@@ -6,9 +6,8 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set)
     gameMode: null,
     gameStartTime: null,
     gameEndTime: null,
-    targetDistance: 5.0,
+    targetDistance: 2.0,
     finalRank: null,
-    gpsError: null,
     retryGpsIndex: 0,
     setStatus: (status) => set({ status }),
     setGameMode: (gameMode) => set({ gameMode }),
@@ -16,7 +15,6 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set)
     setGameEndTime: (time) => set({ gameEndTime: time }),
     setTargetDistance: (distance) => set({ targetDistance: distance }),
     setFinalRank: (rank) => set({ finalRank: rank }),
-    setGpsError: (error) => set({ gpsError: error }),
     triggerGpsRetry: () => set((state) => ({ retryGpsIndex: state.retryGpsIndex + 1 })),
     resetGameSlice: () => set({
         status: 'IDLE',

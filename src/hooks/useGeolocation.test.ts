@@ -1,60 +1,61 @@
-import { renderHook } from '@testing-library/react';
+import { renderHook, waitFor } from '@testing-library/react';
 import { useGeolocation } from './useGeolocation';
 import { useGameStore } from '../store/useGameStore';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
-describe('useGeolocation', () => {
-  const mockWatchPosition = vi.fn();
-  const mockClearWatch = vi.fn();
+// Mock Capacitor Geolocation
+vi.mock('@capacitor/geolocation', () => ({
+  Geolocation: {
+    checkPermissions: vi.fn().mockResolvedValue({ location: 'granted' }),
+    requestPermissions: vi.fn().mockResolvedValue({ location: 'granted' }),
+    watchPosition: vi.fn(),
+    clearWatch: vi.fn(),
+  }
+}));
 
+// Mock useOrientation hook
+vi.mock('./useOrientation', () => ({
+  useOrientation: () => ({ heading: null, accuracy: null })
+}));
+
+// Mock MapMatchingService (dynamic import in useGeolocation)
+vi.mock('../services/MapMatchingService', () => ({
+  MapMatchingService: {
+    matchPath: vi.fn().mockResolvedValue([])
+  }
+}));
+
+import { Geolocation } from '@capacitor/geolocation';
+
+describe('useGeolocation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
+
     // Reset store
     useGameStore.setState({ userPosition: null, gpsError: null });
-
-    // Mock geolocation
-    if ('geolocation' in navigator) {
-      // If it exists (e.g. jsdom), spy on it or redefine it
-      // For simplicity in this test environment, we redefine it.
-      Object.defineProperty(navigator, 'geolocation', {
-        value: {
-          watchPosition: mockWatchPosition,
-          clearWatch: mockClearWatch,
-        },
-        writable: true, // Allow overwriting
-      });
-    } else {
-        Object.defineProperty(navigator, 'geolocation', {
-            value: {
-              watchPosition: mockWatchPosition,
-              clearWatch: mockClearWatch,
-            },
-            configurable: true,
-          });
-    }
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it('should start watching position on mount', () => {
-    mockWatchPosition.mockReturnValue(1);
-    
+  it('should start watching position on mount', async () => {
+    (Geolocation.watchPosition as any).mockResolvedValue('watch-id-1');
+
     renderHook(() => useGeolocation());
-    
-    expect(mockWatchPosition).toHaveBeenCalledTimes(1);
-    expect(mockWatchPosition).toHaveBeenCalledWith(
-      expect.any(Function),
-      expect.any(Function),
-      expect.objectContaining({ enableHighAccuracy: true })
-    );
+
+    await waitFor(() => {
+      expect(Geolocation.checkPermissions).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(Geolocation.watchPosition).toHaveBeenCalledTimes(1);
+    });
   });
 
-  it('should update store when position updates', () => {
-    mockWatchPosition.mockImplementation((success) => {
-      success({
+  it('should update store when position updates', async () => {
+    (Geolocation.watchPosition as any).mockImplementation(async (_options: any, callback: any) => {
+      callback({
         coords: {
           latitude: 10,
           longitude: 20,
@@ -63,42 +64,47 @@ describe('useGeolocation', () => {
           speed: 2,
         },
         timestamp: 123456789,
-      });
-      return 1;
+      }, null);
+      return 'watch-id-2';
     });
 
     renderHook(() => useGeolocation());
+
+    await waitFor(() => {
+      const position = useGameStore.getState().userPosition;
+      expect(position).not.toBeNull();
+    });
 
     const position = useGameStore.getState().userPosition;
-    expect(position).toEqual({
-      latitude: 10,
-      longitude: 20,
-      accuracy: 5,
-      heading: 90,
-      speed: 2,
-      timestamp: 123456789,
-    });
+    // Note: Kalman filter may adjust values slightly
+    expect(position?.latitude).toBeCloseTo(10, 1);
+    expect(position?.longitude).toBeCloseTo(20, 1);
   });
 
-  it('should handle errors', () => {
-    const error = { code: 1, message: 'Permission denied' };
-    mockWatchPosition.mockImplementation((_, errorCallback) => {
-      errorCallback(error);
-      return 1;
+  it('should handle errors', async () => {
+    (Geolocation.watchPosition as any).mockImplementation(async (_options: any, callback: any) => {
+      callback(null, { message: 'Permission denied' });
+      return 'watch-id-3';
     });
 
     renderHook(() => useGeolocation());
 
-    expect(useGameStore.getState().gpsError).toEqual(error.message);
+    await waitFor(() => {
+      expect(useGameStore.getState().gpsError).toEqual('Permission denied');
+    });
   });
 
-  it('should clear watch on unmount', () => {
-    mockWatchPosition.mockReturnValue(123);
-    
+  it('should clear watch on unmount', async () => {
+    (Geolocation.watchPosition as any).mockResolvedValue('watch-id-4');
+
     const { unmount } = renderHook(() => useGeolocation());
-    
+
+    await waitFor(() => {
+      expect(Geolocation.watchPosition).toHaveBeenCalled();
+    });
+
     unmount();
-    
-    expect(mockClearWatch).toHaveBeenCalledWith(123);
+
+    expect(Geolocation.clearWatch).toHaveBeenCalledWith({ id: 'watch-id-4' });
   });
 });
