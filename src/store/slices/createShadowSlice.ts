@@ -15,5 +15,7 @@ export const createShadowSlice: StateCreator<GameState, [], [], ShadowSlice> = (
         shadowPosition: null,
         shadowDistance: null,
         currentShadowSpeed: 15,
+        baseShadowSpeed: 15,
+        maxShadowSpeed: 25,
     }),
 });

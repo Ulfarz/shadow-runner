@@ -130,15 +130,19 @@ export const MainMenu: React.FC = () => {
 
         const parsed = parseFloat(val);
         if (!isNaN(parsed)) {
-            setTargetDistance(parsed);
+            // Validate and clamp distance between 0.5 and 10 km
+            const clamped = Math.max(0.5, Math.min(10, parsed));
+            setTargetDistance(clamped);
         }
     };
 
     const handleStartGame = () => {
         if (selectedMode) {
             let parsed = parseFloat(inputValue);
-            if (isNaN(parsed) || parsed <= 0) {
+            // Validate: must be between 0.5 and 10 km
+            if (isNaN(parsed) || parsed < 0.5 || parsed > 10) {
                 parsed = 2.0;
+                setInputValue('2.0');
                 setTargetDistance(parsed);
             }
 

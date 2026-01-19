@@ -14,25 +14,18 @@ export const authService = {
     // Connexion
     async loginWithGoogle() {
         try {
-            console.log('Starting Google Sign-In...');
             // 1. Ouvre la popup Google native sur Android
             const googleUser = await GoogleAuth.signIn();
 
-            console.log('Google Native User:', JSON.stringify(googleUser));
-
             // 2. Échange le token Google contre une session Supabase
-            console.log('Starting Supabase Sign-In...');
             const { data, error } = await supabase.auth.signInWithIdToken({
                 provider: 'google',
                 token: googleUser.authentication.idToken,
             });
 
             if (error) {
-                console.error('Supabase Sign-In Error:', error);
                 throw error;
             }
-
-            console.log('Supabase Sign-In Successful:', data.user);
 
             // 3. (Optionnel) Vérifie si le profil existe, sinon le trigger SQL le créera
             return data.user;

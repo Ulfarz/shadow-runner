@@ -23,5 +23,6 @@ export const createGameSlice: StateCreator<GameState, [], [], GameSlice> = (set)
         gameEndTime: null,
         targetDistance: 2.0,
         finalRank: null,
+        retryGpsIndex: 0,
     }),
 });

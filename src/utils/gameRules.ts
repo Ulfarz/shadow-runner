@@ -4,6 +4,7 @@ import { MissionRank } from '../store/useGameStore';
 export const EXTRACTION_RADIUS_M = 50; // Win radius
 export const SHADOW_CATCH_RADIUS_M = 1; // Loss radius
 export const CHECKPOINT_RADIUS_M = 30; // Checkpoint trigger radius
+export const MAX_DANGER_DIST = 100; // Distance at which danger opacity starts showing
 
 // Helper: Convert km/h to m/s
 export const kphToMps = (kph: number) => kph / 3.6;

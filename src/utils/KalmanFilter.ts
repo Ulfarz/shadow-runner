@@ -61,9 +61,16 @@ export class LocationKalmanFilter {
         // 1 degree lat approx 111km. 1m = 1/111000 degrees.
         // Variance is accuracy squared.
         // It's simpler to work in the filter's abstract units or relative.
-        // Let's just use the accuracy value as the R parameter directly if suitably scaled.
-        this.latFilter.setParameters(accuracy * accuracy, 1);
-        this.lngFilter.setParameters(accuracy * accuracy, 1);
+        // Limit R to max 400 (corresponds to 20m accuracy squared) to prevent super slow convergence
+        // Ideally: R should be high if we trust filter > measure, Low if we trust measure > filter.
+        // For game responsiveness: we want to trust the GPS more if the filter is lagging too much behind.
+        // But standard Kalman logic: High Accuracy (Low val) = Trust Measure. Low Accuracy (High val) = Trust Filter.
+        // Issue: if phone reports 20m accuracy, R=400. Filter becomes very sluggish.
+        // Fix: Clamp accuracy usage or scale it down.
+        const effectiveAccuracy = Math.min(accuracy, 10); // Treat anything > 10m as just "10m inaccurate" to keep it moving.
+
+        this.latFilter.setParameters(effectiveAccuracy * effectiveAccuracy, 1);
+        this.lngFilter.setParameters(effectiveAccuracy * effectiveAccuracy, 1);
 
         const filteredLat = this.latFilter.filter(lat);
         const filteredLng = this.lngFilter.filter(lng);

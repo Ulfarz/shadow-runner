@@ -140,14 +140,12 @@ export const statsService = {
                 .insert(session);
 
             if (sessionError) {
-                console.error('Error saving game session:', sessionError);
                 return false;
             }
 
             // 2. Update player profile
             const profile = await this.getPlayerProfile();
             if (!profile) {
-                console.warn('Profile not found, creating one');
                 // Profile should auto-create via trigger, but fallback
                 await supabase.from('profiles').insert({
                     id: user.id,

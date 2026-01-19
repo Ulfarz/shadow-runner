@@ -20,6 +20,7 @@ export const createMapSlice: StateCreator<GameState, [], [], MapSlice> = (set) =
         routeCoordinates: null,
         distanceToExtraction: null,
         initialDistanceToExtraction: null,
+        centerOnPlayer: null,
+        centerOnExtraction: null,
     }),
 });
-

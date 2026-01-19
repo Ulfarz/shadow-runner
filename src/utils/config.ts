@@ -1,2 +1,7 @@
-// Temporary hardcoded token to ensure mobile works without server restart
-export const MAPBOX_TOKEN = 'pk.eyJ1IjoidG9tZ3VlZ3VlbiIsImEiOiJjbWp4OHJ5eHozazR3M2NzZWZic2x6ZnZvIn0.VvmJM17B1Bn5VxTIs-tGFw';
+// Get Mapbox token from environment variable
+// For development, you can create a .env file with: VITE_MAPBOX_TOKEN=your_token_here
+export const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
+
+if (!MAPBOX_TOKEN) {
+  console.error('⚠️ MAPBOX_TOKEN not found. Please set VITE_MAPBOX_TOKEN in your .env file');
+}

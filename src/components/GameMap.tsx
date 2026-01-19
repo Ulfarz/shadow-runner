@@ -152,7 +152,7 @@ const GameMap: React.FC = () => {
 
       if (!isMapLoaded || !map.current || !startPos.current || !targetPos.current || !lastRenderedPos.current) return;
 
-      const duration = 1000;
+      const duration = 300; // Faster response (was 1000)
       const elapsed = time - animationStartTime.current;
       const t = Math.min(Math.max(elapsed / duration, 0), 1);
 
@@ -249,7 +249,10 @@ const GameMap: React.FC = () => {
         const geolocateBtn = document.querySelector('.mapboxgl-ctrl-geolocate');
         if (geolocateBtn) (geolocateBtn as HTMLElement).style.display = 'none';
 
-        map.current.on('error', (e) => console.error("Mapbox Error:", e));
+        map.current.on('error', (e) => {
+          // Mapbox error - handled silently in production
+          console.debug("[Mapbox] Error:", e);
+        });
 
         const stopFollowing = () => {
           if (followingUser.current) {
@@ -362,10 +365,10 @@ const GameMap: React.FC = () => {
           map.current.addLayer({
             id: 'extraction-core', type: 'circle', source: 'extraction',
             paint: {
-              'circle-radius': 15,
-              'circle-color': '#10b981', // Emerald-500
-              'circle-stroke-width': 4, // Thicker border
-              'circle-stroke-color': '#ecfdf5' // Emerald-50 (Near white)
+              'circle-radius': 20,
+              'circle-color': '#d946ef', // Fuchsia-500 (Neon Purple)
+              'circle-stroke-width': 4,
+              'circle-stroke-color': '#fae8ff' // Fuchsia-50 (Near white)
             }
           });
           // Add a pulsating ring effect (simulated with a second transparent larger circle)
@@ -373,10 +376,10 @@ const GameMap: React.FC = () => {
             id: 'extraction-ring', type: 'circle', source: 'extraction',
             paint: {
               'circle-radius': 80,
-              'circle-color': '#059669', // Emerald-600
-              'circle-opacity': 0.15,
-              'circle-stroke-width': 1,
-              'circle-stroke-color': '#34d399'
+              'circle-color': '#8b5cf6', // Violet-500
+              'circle-opacity': 0.25,
+              'circle-stroke-width': 2,
+              'circle-stroke-color': '#d946ef'
             }
           });
 
@@ -390,8 +393,11 @@ const GameMap: React.FC = () => {
           map.current.addLayer({ id: 'shadow-core', type: 'circle', source: 'shadow', paint: { 'circle-radius': 8, 'circle-color': '#dc2626', 'circle-stroke-width': 2, 'circle-stroke-color': '#7f1d1d' } });
 
           map.current.addSource('player', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-          map.current.addLayer({ id: 'player-marker-precision', type: 'circle', source: 'player', filter: ['==', 'type', 'point'], paint: { 'circle-radius': 4, 'circle-color': '#ffffff', 'circle-opacity': 0.9 } });
-          map.current.addLayer({ id: 'player-heading', type: 'symbol', source: 'player', filter: ['==', 'type', 'point'], layout: { 'icon-image': 'player-arrow', 'icon-size': 0.5, 'icon-rotate': ['get', 'heading'], 'icon-rotation-alignment': 'map', 'icon-allow-overlap': true }, paint: { 'icon-opacity': 1 } });
+          map.current.addLayer({ id: 'player-marker-precision', type: 'circle', source: 'player', filter: ['==', 'type', 'point'], paint: { 'circle-radius': 8, 'circle-color': '#3b82f6', 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff', 'circle-opacity': 1 } });
+          // Arrow removed as requested
+          // map.current.addLayer({ id: 'player-heading', type: 'symbol', source: 'player', filter: ['==', 'type', 'point'], layout: { 'icon-image': 'player-arrow', 'icon-size': 0.5, 'icon-rotate': ['get', 'heading'], 'icon-rotation-alignment': 'map', 'icon-allow-overlap': true }, paint: { 'icon-opacity': 1 } });
+          map.current.addLayer({ id: 'player-pulse', type: 'circle', source: 'player', filter: ['==', 'type', 'point'], paint: { 'circle-radius': 20, 'circle-color': '#3b82f6', 'circle-opacity': 0.3 } });
+          map.current.moveLayer('player-pulse', 'player-marker-precision');
 
           // --- 3. FINAL LAYER REORDERING ---
           // Explicitly enforce z-index stack (Bottom -> Top)
@@ -405,7 +411,7 @@ const GameMap: React.FC = () => {
             'extraction-core',          // Extraction Center
             'checkpoint-glow', 'checkpoint-core', 'checkpoint-flag',
             'shadow-glow', 'shadow-core',
-            'player-marker-precision', 'player-heading' // Top: Player
+            'player-pulse', 'player-marker-precision' // Top: Player (Arrow removed)
           ];
 
           orderedLayers.forEach(id => {

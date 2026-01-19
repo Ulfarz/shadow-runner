@@ -29,8 +29,6 @@ export const useGeolocation = (options: GeolocationOptions = { enableHighAccurac
 
     const startWatching = async () => {
       try {
-        console.log(`[Geolocation] Starting watch (Attempt ${retryGpsIndex + 1})`);
-
         // Check permissions first
         const permissionStatus = await Geolocation.checkPermissions();
         if (permissionStatus.location === 'denied') {

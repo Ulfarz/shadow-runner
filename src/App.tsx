@@ -8,6 +8,7 @@ import { useWakeLock } from './hooks/useWakeLock'
 import { useGeolocation } from './hooks/useGeolocation'
 import { useGameLogic } from './hooks/useGameLogic'
 import { useGameStore } from './store/useGameStore'
+import { MAX_DANGER_DIST } from './utils/gameRules'
 // i18n is initialized in main.tsx
 
 function App() {
@@ -27,7 +28,6 @@ function App() {
 
   // Calculate red screen opacity based on proximity to shadow
   // As shadowDistance approaches 0, opacity approaches 1.
-  const MAX_DANGER_DIST = 100; // Start showing red at 100m
   let dangerOpacity = 0;
 
   if (status === 'ACTIVE' && shadowDistance !== null) {

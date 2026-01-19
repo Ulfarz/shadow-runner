@@ -148,10 +148,11 @@ export const GameHUD: React.FC = () => {
                     {gameMode === 'EXTRACTION' && (
                         <button
                             onClick={() => centerOnExtraction?.()}
-                            className="pointer-events-auto bg-emerald-900/80 backdrop-blur-sm rounded-full p-3 active:bg-emerald-700 transition-colors border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                            className="pointer-events-auto bg-fuchsia-900/80 backdrop-blur-sm rounded-full px-4 py-3 active:bg-fuchsia-700 transition-colors border border-fuchsia-500/30 shadow-[0_0_15px_rgba(217,70,239,0.3)] flex items-center gap-2"
                             aria-label="Locate Extraction"
                         >
-                            <Target size={24} className="text-emerald-400" />
+                            <Target size={24} className="text-fuchsia-400" />
+                            <span className="text-white font-bold font-mono text-sm tracking-wider">CIBLE</span>
                         </button>
                     )}
 

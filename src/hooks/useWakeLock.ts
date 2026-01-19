@@ -1,24 +1,41 @@
 import { useEffect, useRef } from 'react';
+import { useGameStore } from '../store/useGameStore';
 
 export const useWakeLock = () => {
   const wakeLock = useRef<WakeLockSentinel | null>(null);
+  const status = useGameStore((state) => state.status);
 
   useEffect(() => {
     const requestWakeLock = async () => {
       try {
-        if ('wakeLock' in navigator && navigator.wakeLock) {
+        if ('wakeLock' in navigator && navigator.wakeLock && status === 'ACTIVE') {
           wakeLock.current = await navigator.wakeLock.request('screen');
-          console.log('Wake Lock is active');
         }
       } catch (err) {
-        console.warn('Wake Lock request failed:', err);
+        // Silent fail - wake lock is a nice-to-have feature
       }
     };
 
-    requestWakeLock();
+    const releaseWakeLock = async () => {
+      if (wakeLock.current) {
+        try {
+          await wakeLock.current.release();
+          wakeLock.current = null;
+        } catch (err) {
+          // Wake lock already released
+        }
+      }
+    };
+
+    // Request wake lock when game becomes active
+    if (status === 'ACTIVE') {
+      requestWakeLock();
+    } else {
+      releaseWakeLock();
+    }
 
     const handleVisibilityChange = async () => {
-      if (wakeLock.current !== null && document.visibilityState === 'visible') {
+      if (status === 'ACTIVE' && document.visibilityState === 'visible') {
         await requestWakeLock();
       }
     };
@@ -27,12 +44,7 @@ export const useWakeLock = () => {
 
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      if (wakeLock.current) {
-        wakeLock.current.release().then(() => {
-          wakeLock.current = null;
-          console.log('Wake Lock released');
-        });
-      }
+      releaseWakeLock();
     };
-  }, []);
+  }, [status]);
 };
