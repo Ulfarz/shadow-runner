@@ -290,7 +290,7 @@ const GameMap: React.FC = () => {
             source: 'fog-source',
             paint: {
               'fill-color': '#000000',
-              'fill-opacity': 0.98 // Almost pitch black, but let a tiny bit of street data bleed if needed, or 1.0 for total darkness
+              'fill-opacity': 1.0 // Total darkness - player can only see within 50m radius
             }
           });
 
@@ -402,16 +402,14 @@ const GameMap: React.FC = () => {
           // --- 3. FINAL LAYER REORDERING ---
           // Explicitly enforce z-index stack (Bottom -> Top)
           const orderedLayers = [
-            'fog-layer',                // Bottom: Fog Mask
-            'trail-glow-layer',         // Reveal History
-            'current-pos-glow-layer',   // Reveal Current
+            'fog-layer',                // Bottom: Fog Mask (total darkness)
+            'trail-glow-layer',         // Reveal History (cutouts above fog)
+            'current-pos-glow-layer',   // Reveal Current (cutout above fog)
             'route-line',               // Route
-            'extraction-glow',          // Extraction Base
-            'extraction-ring',          // Extraction Ring
-            'extraction-core',          // Extraction Center
-            'checkpoint-glow', 'checkpoint-core', 'checkpoint-flag',
-            'shadow-glow', 'shadow-core',
-            'player-pulse', 'player-marker-precision' // Top: Player (Arrow removed)
+            'checkpoint-glow', 'checkpoint-core', 'checkpoint-flag', // Checkpoint visible
+            'shadow-glow', 'shadow-core', // Shadow visible above fog
+            'extraction-glow', 'extraction-ring', 'extraction-core', // Extraction visible above fog
+            'player-pulse', 'player-marker-precision' // Top: Player
           ];
 
           orderedLayers.forEach(id => {
@@ -510,7 +508,7 @@ const GameMap: React.FC = () => {
             ]]);
           }
 
-          // 2. Calculate Revealed Area (50m buffer around path + current position)
+          // 2. Calculate Revealed Area (50m buffer around path + current position + extraction point)
           let revealed: any = null;
 
           // Buffer the path (50m = 0.05km)
@@ -526,6 +524,17 @@ const GameMap: React.FC = () => {
               revealed = revealed
                 ? turf.union(turf.featureCollection([revealed, posBuffer]))
                 : posBuffer;
+            }
+          }
+
+          // Buffer extraction point (50m circle) - Make it visible
+          if (extractionPoint) {
+            const extractionPointGeo = turf.point([extractionPoint.longitude, extractionPoint.latitude]);
+            const extractionBuffer = turf.buffer(extractionPointGeo, 0.05, { units: 'kilometers' });
+            if (extractionBuffer) {
+              revealed = revealed
+                ? turf.union(turf.featureCollection([revealed, extractionBuffer]))
+                : extractionBuffer;
             }
           }
 
@@ -547,7 +556,7 @@ const GameMap: React.FC = () => {
         }
       }
     }
-  }, [pathHistory, userPosition, isMapLoaded, status]);
+  }, [pathHistory, userPosition, isMapLoaded, status, extractionPoint]);
 
   // 8. Sync Dynamic Color
   useEffect(() => {

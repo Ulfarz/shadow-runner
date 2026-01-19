@@ -111,59 +111,58 @@ export const GameHUD: React.FC = () => {
             )}
 
             {/* BOTTOM BAR - Speed indicator */}
-            <div className="mt-auto pb-[max(16px,env(safe-area-inset-bottom))] px-4">
-                <div className="flex justify-center items-end gap-3">
-                    <div className="bg-black/80 backdrop-blur-sm rounded-2xl px-6 py-3 flex items-center gap-4">
+            <div className="mt-auto pb-[max(16px,env(safe-area-inset-bottom))] px-3">
+                <div className="flex justify-center items-center gap-2">
+                    <div className="bg-black/80 backdrop-blur-sm rounded-2xl px-5 py-2.5 flex items-center gap-3">
                         <div className="text-center">
                             <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wide mb-0.5">
                                 {t('hud.your_speed')}
                             </div>
                             <div className="flex items-baseline justify-center gap-1">
-                                <span className="text-3xl font-black text-white font-mono tabular-nums">
+                                <span className="text-2xl font-black text-white font-mono tabular-nums">
                                     {formatSpeed(userPosition?.speed || 0)}
                                 </span>
-                                <span className="text-xs text-slate-500 font-bold">{t('hud.kmh')}</span>
+                                <span className="text-[10px] text-slate-500 font-bold">{t('hud.kmh')}</span>
                             </div>
                         </div>
 
                         {gameMode === 'EXTRACTION' && (
                             <>
-                                <div className="w-px h-10 bg-slate-700" />
+                                <div className="w-px h-8 bg-slate-700" />
                                 <div className="text-center">
                                     <div className="text-red-400 text-[10px] font-bold uppercase tracking-wide mb-0.5">
                                         {t('hud.shadow')}
                                     </div>
                                     <div className="flex items-baseline justify-center gap-1">
-                                        <span className="text-3xl font-black text-red-400 font-mono tabular-nums">
+                                        <span className="text-2xl font-black text-red-400 font-mono tabular-nums">
                                             {currentShadowSpeed.toFixed(0)}
                                         </span>
-                                        <span className="text-xs text-slate-500 font-bold">{t('hud.kmh')}</span>
+                                        <span className="text-[10px] text-slate-500 font-bold">{t('hud.kmh')}</span>
                                     </div>
                                 </div>
                             </>
                         )}
                     </div>
 
+                    {/* Center on Player Button */}
+                    <button
+                        onClick={() => centerOnPlayer?.()}
+                        className="pointer-events-auto bg-black/80 backdrop-blur-sm rounded-full p-2.5 active:bg-slate-700 transition-colors"
+                        aria-label={t('hud.center_on_player')}
+                    >
+                        <Crosshair size={20} className="text-white" />
+                    </button>
+
                     {/* Locate Extraction Button (only in Extraction Mode) */}
                     {gameMode === 'EXTRACTION' && (
                         <button
                             onClick={() => centerOnExtraction?.()}
-                            className="pointer-events-auto bg-fuchsia-900/80 backdrop-blur-sm rounded-full px-4 py-3 active:bg-fuchsia-700 transition-colors border border-fuchsia-500/30 shadow-[0_0_15px_rgba(217,70,239,0.3)] flex items-center gap-2"
+                            className="pointer-events-auto bg-fuchsia-900/80 backdrop-blur-sm rounded-full p-2.5 active:bg-fuchsia-700 transition-colors border border-fuchsia-500/30 shadow-[0_0_15px_rgba(217,70,239,0.3)]"
                             aria-label="Locate Extraction"
                         >
-                            <Target size={24} className="text-fuchsia-400" />
-                            <span className="text-white font-bold font-mono text-sm tracking-wider">CIBLE</span>
+                            <Target size={20} className="text-fuchsia-400" />
                         </button>
                     )}
-
-                    {/* Center on Player Button */}
-                    <button
-                        onClick={() => centerOnPlayer?.()}
-                        className="pointer-events-auto bg-black/80 backdrop-blur-sm rounded-full p-3 active:bg-slate-700 transition-colors"
-                        aria-label={t('hud.center_on_player')}
-                    >
-                        <Crosshair size={24} className="text-white" />
-                    </button>
                 </div>
             </div>
 
